@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ImagePlus, Pencil, Save, SmilePlus, Trash2 } from "lucide-react";
+import {
+  AlignCenter,
+  AlignLeft,
+  Bold,
+  Clipboard,
+  Copy,
+  ImagePlus,
+  Italic,
+  List,
+  Paintbrush,
+  Scissors,
+  SmilePlus,
+  Trash2,
+  Underline,
+} from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
 import { Button } from "@/components/ui/button";
@@ -13,175 +27,148 @@ export const Route = createFileRoute("/notas")({
   ),
 });
 
-const HTML_KEY = "planner-notas-html-v1";
-const DRAW_KEY = "planner-notas-dibujo-v1";
+type BoxId = "hoy" | "prioridades" | "recordatorios" | "libre";
+const BOXES: { id: BoxId; title: string; tone: string; placeholder: string }[] = [
+  { id: "hoy", title: "HOY", tone: "bg-[#DCE5DA]", placeholder: "Tocá acá y escribí..." },
+  { id: "prioridades", title: "PRIORIDADES", tone: "bg-[#EFE0D5]", placeholder: "Ideas, prioridades, listas..." },
+  { id: "recordatorios", title: "RECORDATORIOS", tone: "bg-[#DCE5DA]", placeholder: "Cosas para no olvidar..." },
+  { id: "libre", title: "LIENZO LIBRE", tone: "bg-[#EEE8DE]", placeholder: "Texto, imágenes, stickers..." },
+];
+
+function storageKey(id: BoxId) {
+  return `planner-lienzo-${id}-v2`;
+}
 
 function NotasPage() {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const refs = useRef<Record<BoxId, HTMLDivElement | null>>({ hoy: null, prioridades: null, recordatorios: null, libre: null });
   const fileRef = useRef<HTMLInputElement>(null);
-  const [drawing, setDrawing] = useState(false);
-  const [saved, setSaved] = useState(true);
+  const [active, setActive] = useState<BoxId>("hoy");
+  const [copiedHtml, setCopiedHtml] = useState("");
 
   useEffect(() => {
-    const editor = editorRef.current;
-    if (editor) editor.innerHTML = localStorage.getItem(HTML_KEY) ?? "";
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const image = localStorage.getItem(DRAW_KEY);
-    if (ctx && image) {
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      img.src = image;
-    }
+    BOXES.forEach(({ id }) => {
+      const el = refs.current[id];
+      if (el) el.innerHTML = localStorage.getItem(storageKey(id)) ?? "";
+    });
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !drawing) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#26352E";
-    let active = false;
+  const saveBox = (id: BoxId) => {
+    const el = refs.current[id];
+    if (el) localStorage.setItem(storageKey(id), el.innerHTML);
+  };
 
-    const point = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-        y: ((event.clientY - rect.top) / rect.height) * canvas.height,
-      };
-    };
-    const down = (event: PointerEvent) => {
-      active = true;
-      const p = point(event);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      canvas.setPointerCapture(event.pointerId);
-    };
-    const move = (event: PointerEvent) => {
-      if (!active) return;
-      const p = point(event);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      setSaved(false);
-    };
-    const up = () => {
-      active = false;
-    };
-
-    canvas.addEventListener("pointerdown", down);
-    canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("pointerup", up);
-    canvas.addEventListener("pointercancel", up);
-    return () => {
-      canvas.removeEventListener("pointerdown", down);
-      canvas.removeEventListener("pointermove", move);
-      canvas.removeEventListener("pointerup", up);
-      canvas.removeEventListener("pointercancel", up);
-    };
-  }, [drawing]);
-
-  const save = () => {
-    localStorage.setItem(HTML_KEY, editorRef.current?.innerHTML ?? "");
-    const canvas = canvasRef.current;
-    if (canvas) localStorage.setItem(DRAW_KEY, canvas.toDataURL("image/png"));
-    setSaved(true);
+  const command = (cmd: string, value?: string) => {
+    refs.current[active]?.focus();
+    document.execCommand(cmd, false, value);
+    saveBox(active);
   };
 
   const insertSticker = (sticker: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    editor.focus();
+    refs.current[active]?.focus();
     document.execCommand("insertText", false, sticker);
-    setSaved(false);
+    saveBox(active);
   };
 
   const addImage = (file?: File) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      editor.focus();
-      document.execCommand("insertHTML", false, `<img src="${reader.result}" alt="Imagen de nota" style="max-width:100%;border-radius:16px;margin:12px 0;" />`);
-      setSaved(false);
+      refs.current[active]?.focus();
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<img src="${reader.result}" alt="Imagen" draggable="true" style="display:block;max-width:90%;height:auto;margin:12px auto;border-radius:14px;box-shadow:0 4px 14px rgba(38,53,46,.12);" />`,
+      );
+      saveBox(active);
     };
     reader.readAsDataURL(file);
   };
 
-  const clearAll = () => {
-    if (editorRef.current) editorRef.current.innerHTML = "";
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    localStorage.removeItem(HTML_KEY);
-    localStorage.removeItem(DRAW_KEY);
-    setSaved(true);
+  const copyBox = () => {
+    const html = refs.current[active]?.innerHTML ?? "";
+    setCopiedHtml(html);
+  };
+
+  const cutBox = () => {
+    const el = refs.current[active];
+    if (!el) return;
+    setCopiedHtml(el.innerHTML);
+    el.innerHTML = "";
+    saveBox(active);
+  };
+
+  const pasteBox = () => {
+    const el = refs.current[active];
+    if (!el || !copiedHtml) return;
+    el.insertAdjacentHTML("beforeend", copiedHtml);
+    saveBox(active);
+  };
+
+  const clearBox = () => {
+    const el = refs.current[active];
+    if (!el) return;
+    el.innerHTML = "";
+    saveBox(active);
   };
 
   return (
-    <PageShell title="Notas" subtitle="Tocá el lienzo y trabajá directamente ahí">
-      <div className="mb-3 flex flex-wrap gap-2">
-        <Button variant={drawing ? "default" : "outline"} className="h-11" onClick={() => setDrawing((v) => !v)}>
-          <Pencil className="h-4 w-4" /> {drawing ? "Dibujando" : "Dibujar"}
-        </Button>
-        <Button variant="outline" className="h-11" onClick={() => fileRef.current?.click()}>
-          <ImagePlus className="h-4 w-4" /> Imagen
-        </Button>
-        <Button variant="outline" className="h-11" onClick={() => insertSticker("🌿")}>
-          <SmilePlus className="h-4 w-4" /> Sticker
-        </Button>
-        <Button className="h-11" onClick={save}>
-          <Save className="h-4 w-4" /> {saved ? "Guardado" : "Guardar"}
-        </Button>
-        <Button variant="ghost" className="h-11 text-destructive" onClick={clearAll}>
-          <Trash2 className="h-4 w-4" /> Limpiar
-        </Button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => addImage(e.target.files?.[0])}
-        />
+    <PageShell title="Notas" subtitle="Cada caja es tu lienzo: tocá y editá directamente">
+      <div className="sticky top-0 z-30 -mx-4 mb-4 border-y border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Tool label="Cortar" onClick={cutBox}><Scissors className="h-5 w-5" /></Tool>
+          <Tool label="Copiar" onClick={copyBox}><Copy className="h-5 w-5" /></Tool>
+          <Tool label="Pegar" onClick={pasteBox}><Clipboard className="h-5 w-5" /></Tool>
+          <Tool label="Negrita" onClick={() => command("bold")}><Bold className="h-5 w-5" /></Tool>
+          <Tool label="Cursiva" onClick={() => command("italic")}><Italic className="h-5 w-5" /></Tool>
+          <Tool label="Subrayar" onClick={() => command("underline")}><Underline className="h-5 w-5" /></Tool>
+          <Tool label="Izquierda" onClick={() => command("justifyLeft")}><AlignLeft className="h-5 w-5" /></Tool>
+          <Tool label="Centrar" onClick={() => command("justifyCenter")}><AlignCenter className="h-5 w-5" /></Tool>
+          <Tool label="Lista" onClick={() => command("insertUnorderedList")}><List className="h-5 w-5" /></Tool>
+          <Tool label="Imagen" onClick={() => fileRef.current?.click()}><ImagePlus className="h-5 w-5" /></Tool>
+          <Tool label="Sticker" onClick={() => insertSticker("✨")}><SmilePlus className="h-5 w-5" /></Tool>
+          <Tool label="Color" onClick={() => command("foreColor", "#486150")}><Paintbrush className="h-5 w-5" /></Tool>
+          <Tool label="Borrar" onClick={clearBox}><Trash2 className="h-5 w-5" /></Tool>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">Caja activa: <strong>{BOXES.find((b) => b.id === active)?.title}</strong>. Cortar/copiar/pegar permite pasar contenido entre cajas.</p>
       </div>
 
-      <p className="mb-3 text-sm text-muted-foreground">
-        Podés escribir, seleccionar texto, cortar, copiar y pegar como en una nota normal. También podés insertar imágenes y stickers o activar el modo dibujo.
-      </p>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => addImage(e.target.files?.[0])} />
 
-      <div className="relative min-h-[68vh] overflow-hidden rounded-[1.6rem] border border-border bg-card shadow-[0_12px_30px_rgba(38,53,46,0.08)]">
-        <div
-          ref={editorRef}
-          contentEditable={!drawing}
-          suppressContentEditableWarning
-          onInput={() => setSaved(false)}
-          className="relative z-10 min-h-[68vh] px-5 py-5 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-['Tocá_acá_y_empezá_a_escribir...']"
-        />
-        <canvas
-          ref={canvasRef}
-          width={900}
-          height={1200}
-          className={`absolute inset-0 h-full w-full touch-none ${drawing ? "z-20 cursor-crosshair" : "pointer-events-none z-0"}`}
-        />
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {["🌱", "⭐", "❤️", "✅", "📌", "💡", "🌸", "☀️"].map((s) => (
-          <button
-            key={s}
-            onClick={() => insertSticker(s)}
-            className="grid h-11 w-11 place-items-center rounded-xl border border-border bg-card text-xl"
-            aria-label={`Insertar ${s}`}
+      <div className="space-y-4">
+        {BOXES.map((box) => (
+          <section
+            key={box.id}
+            className={`overflow-hidden rounded-[1.5rem] border bg-card shadow-[0_8px_24px_rgba(38,53,46,.08)] ${active === box.id ? "border-primary ring-2 ring-primary/15" : "border-border"}`}
+            onPointerDown={() => setActive(box.id)}
           >
-            {s}
-          </button>
+            <div className={`${box.tone} border-b border-border px-4 py-3 text-sm font-extrabold tracking-wide text-primary`}>{box.title}</div>
+            <div
+              ref={(el) => { refs.current[box.id] = el; }}
+              contentEditable
+              suppressContentEditableWarning
+              onFocus={() => setActive(box.id)}
+              onInput={() => saveBox(box.id)}
+              className="min-h-32 px-4 py-4 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]"
+              data-placeholder={box.placeholder}
+            />
+          </section>
+        ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {["🌿", "⭐", "❤️", "✅", "📌", "💡", "🌸", "☀️", "🎯", "📝"].map((s) => (
+          <Button key={s} variant="outline" className="h-11 w-11 p-0 text-xl" onClick={() => insertSticker(s)}>{s}</Button>
         ))}
       </div>
     </PageShell>
+  );
+}
+
+function Tool({ children, label, onClick }: { children: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex min-w-[62px] flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 py-2 text-primary shadow-sm">
+      {children}
+      <span className="text-[11px] font-bold">{label}</span>
+    </button>
   );
 }

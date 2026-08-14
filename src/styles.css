@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -76,77 +62,75 @@
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.976 0.014 84.5);
-  --foreground: oklch(0.28 0.031 45);
-  --card: oklch(0.995 0.006 90);
-  --card-foreground: oklch(0.28 0.031 45);
-  --popover: oklch(0.995 0.006 90);
-  --popover-foreground: oklch(0.28 0.031 45);
-  --primary: oklch(0.56 0.132 42);
-  --primary-foreground: oklch(0.985 0.01 85);
-  --secondary: oklch(0.935 0.026 84);
-  --secondary-foreground: oklch(0.34 0.04 45);
-  --muted: oklch(0.941 0.019 85);
-  --muted-foreground: oklch(0.53 0.033 55);
-  --accent: oklch(0.902 0.045 120);
-  --accent-foreground: oklch(0.32 0.05 130);
-  --destructive: oklch(0.55 0.19 25);
-  --destructive-foreground: oklch(0.985 0.01 85);
-  --border: oklch(0.9 0.021 80);
-  --input: oklch(0.9 0.021 80);
-  --ring: oklch(0.56 0.132 42);
+  --radius: 1.15rem;
+  --background: #F7F3EA;
+  --foreground: #26352E;
+  --card: #FFFDF8;
+  --card-foreground: #26352E;
+  --popover: #FFFDF8;
+  --popover-foreground: #26352E;
+  --primary: #486150;
+  --primary-foreground: #FFFDF8;
+  --secondary: #DCE5DA;
+  --secondary-foreground: #26352E;
+  --muted: #EEE9DE;
+  --muted-foreground: #627068;
+  --accent: #DCE5DA;
+  --accent-foreground: #26352E;
+  --destructive: #A34F45;
+  --destructive-foreground: #FFFDF8;
+  --border: #B9C5B8;
+  --input: #B9C5B8;
+  --ring: #6E8975;
 
-  --terra: oklch(0.56 0.132 42);
-  --terra-soft: oklch(0.93 0.043 60);
-  --olive: oklch(0.5 0.086 132);
-  --olive-soft: oklch(0.93 0.045 130);
-  --sun: oklch(0.62 0.13 75);
-  --sun-soft: oklch(0.94 0.055 90);
-  --plum: oklch(0.48 0.093 330);
-  --plum-soft: oklch(0.93 0.033 330);
-  --cielo: oklch(0.52 0.086 235);
-  --cielo-soft: oklch(0.93 0.032 230);
-  --rosa: oklch(0.57 0.115 10);
-  --rosa-soft: oklch(0.94 0.031 15);
+  --terra: #B9865B;
+  --terra-soft: #F2E5D7;
+  --olive: #6E8975;
+  --olive-soft: #DCE5DA;
+  --sun: #C99A67;
+  --sun-soft: #F4EBDD;
+  --plum: #75678E;
+  --plum-soft: #ECE8F2;
+  --cielo: #6E8795;
+  --cielo-soft: #E3EAED;
+  --rosa: #A77470;
+  --rosa-soft: #F1E4E2;
 
-  --shadow-soft: 0 1px 2px oklch(0.4 0.05 60 / 0.05), 0 8px 24px oklch(0.4 0.05 60 / 0.07);
-  --gradient-warm: linear-gradient(135deg, var(--terra), var(--sun));
+  --shadow-soft: 0 2px 6px rgba(38, 53, 46, 0.06), 0 14px 30px rgba(38, 53, 46, 0.08);
+  --gradient-warm: linear-gradient(135deg, #486150 0%, #6E8975 100%);
 }
 
-
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
+  html { font-size: 16px; background: var(--background); }
   body {
+    margin: 0;
+    min-width: 320px;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
     -webkit-tap-highlight-color: transparent;
+    padding-top: env(safe-area-inset-top, 0px);
   }
-
-  h1,
-  h2,
-  h3 {
+  button, input, textarea, select { font-size: 1rem; }
+  h1, h2, h3 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
+    color: var(--foreground);
   }
 }
 
 @utility card-soft {
   background-color: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, white);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-soft);
 }
 
-@utility gradient-warm {
-  background-image: var(--gradient-warm);
-}
+@utility gradient-warm { background-image: var(--gradient-warm); }
 
 @utility safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7.5rem);
 }
-

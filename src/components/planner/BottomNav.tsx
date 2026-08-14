@@ -11,19 +11,17 @@ const items = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-3xl items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 shadow-[0_-8px_30px_rgba(38,53,46,0.08)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-3xl items-stretch justify-between px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.55rem)]">
         {items.map(({ to, label, icon: Icon, exact }) => (
           <Link
             key={to}
             to={to}
             activeOptions={{ exact }}
-            className="group flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-muted-foreground transition-colors data-[status=active]:text-primary"
+            className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-muted-foreground transition-all data-[status=active]:bg-primary data-[status=active]:text-primary-foreground"
           >
-            <span className="rounded-full px-3 py-1 transition-colors group-data-[status=active]:bg-terra-soft">
-              <Icon className="h-5 w-5" />
-            </span>
-            <span className="truncate text-[11px] font-semibold">{label}</span>
+            <Icon className="h-6 w-6" />
+            <span className="truncate text-[13px] font-bold leading-none">{label}</span>
           </Link>
         ))}
       </div>

@@ -55,7 +55,7 @@ function TareasPage() {
     .filter((t) => t.title.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <AppGate>
+    <>
       <PageShell
         title="Tareas"
         subtitle={`${state.tasks.filter((t) => !t.done).length} pendientes en total`}
@@ -140,6 +140,6 @@ function TareasPage() {
           defaultSectionId={editing ? undefined : (seccion ?? null)}
         />
       </PageShell>
-    </AppGate>
+    </>
   );
 }

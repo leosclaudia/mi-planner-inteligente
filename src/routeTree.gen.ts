@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AsistenteRouteImport } from './routes/asistente'
 import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as PersonalizarRouteImport } from './routes/personalizar'
+import { Route as ProyectosRouteImport } from './routes/proyectos'
 import { Route as TareasRouteImport } from './routes/tareas'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +31,16 @@ const CalendarioRoute = CalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PersonalizarRoute = PersonalizarRouteImport.update({
+  id: '/personalizar',
+  path: '/personalizar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProyectosRoute = ProyectosRouteImport.update({
+  id: '/proyectos',
+  path: '/proyectos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TareasRoute = TareasRouteImport.update({
   id: '/tareas',
   path: '/tareas',
@@ -39,12 +51,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/personalizar': typeof PersonalizarRoute
+  '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/personalizar': typeof PersonalizarRoute
+  '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesById {
@@ -52,20 +68,43 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/personalizar': typeof PersonalizarRoute
+  '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/asistente' | '/calendario' | '/tareas'
+  fullPaths:
+    | '/'
+    | '/asistente'
+    | '/calendario'
+    | '/personalizar'
+    | '/proyectos'
+    | '/tareas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/asistente' | '/calendario' | '/tareas'
-  id: '__root__' | '/' | '/asistente' | '/calendario' | '/tareas'
+  to:
+    | '/'
+    | '/asistente'
+    | '/calendario'
+    | '/personalizar'
+    | '/proyectos'
+    | '/tareas'
+  id:
+    | '__root__'
+    | '/'
+    | '/asistente'
+    | '/calendario'
+    | '/personalizar'
+    | '/proyectos'
+    | '/tareas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AsistenteRoute: typeof AsistenteRoute
   CalendarioRoute: typeof CalendarioRoute
+  PersonalizarRoute: typeof PersonalizarRoute
+  ProyectosRoute: typeof ProyectosRoute
   TareasRoute: typeof TareasRoute
 }
 
@@ -92,6 +131,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/personalizar': {
+      id: '/personalizar'
+      path: '/personalizar'
+      fullPath: '/personalizar'
+      preLoaderRoute: typeof PersonalizarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proyectos': {
+      id: '/proyectos'
+      path: '/proyectos'
+      fullPath: '/proyectos'
+      preLoaderRoute: typeof ProyectosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tareas': {
       id: '/tareas'
       path: '/tareas'
@@ -106,6 +159,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AsistenteRoute: AsistenteRoute,
   CalendarioRoute: CalendarioRoute,
+  PersonalizarRoute: PersonalizarRoute,
+  ProyectosRoute: ProyectosRoute,
   TareasRoute: TareasRoute,
 }
 export const routeTree = rootRouteImport

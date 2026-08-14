@@ -1,0 +1,145 @@
+import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
+import { z } from "zod";
+import { AppGate } from "@/components/planner/AppGate";
+import { PageShell } from "@/components/planner/PageShell";
+import { TaskItem } from "@/components/planner/TaskItem";
+import { TaskDialog } from "@/components/planner/TaskDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePlanner } from "@/lib/planner/store";
+import type { Task } from "@/lib/planner/types";
+import { cn } from "@/lib/utils";
+
+const searchSchema = z.object({ seccion: z.string().optional() });
+
+export const Route = createFileRoute("/tareas")({
+  validateSearch: searchSchema,
+  head: () => ({
+    meta: [
+      { title: "Tareas | Planner Inteligente" },
+      {
+        name: "description",
+        content: "Creá, completá, editá y eliminá tus tareas por sección y prioridad.",
+      },
+      { property: "og:title", content: "Tareas | Planner Inteligente" },
+      {
+        property: "og:description",
+        content: "Gestioná todos tus pendientes en un solo lugar.",
+      },
+    ],
+  }),
+  component: () => (
+    <AppGate>
+      <TareasPage />
+    </AppGate>
+  ),
+});
+
+function TareasPage() {
+  const { state, visibleSections } = usePlanner();
+  const { seccion } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [filter, setFilter] = useState<"pendientes" | "hechas" | "todas">("pendientes");
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Task | null>(null);
+
+  const tasks = state.tasks
+    .filter((t) => (seccion ? t.sectionId === seccion : true))
+    .filter((t) =>
+      filter === "todas" ? true : filter === "hechas" ? t.done : !t.done,
+    )
+    .filter((t) => t.title.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <AppGate>
+      <PageShell
+        title="Tareas"
+        subtitle={`${state.tasks.filter((t) => !t.done).length} pendientes en total`}
+        action={
+          <Button
+            className="h-11"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nueva
+          </Button>
+        }
+      >
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar tarea…"
+          className="h-12"
+        />
+
+        <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+          <button
+            onClick={() => navigate({ search: {} })}
+            className={cn(
+              "shrink-0 rounded-full border border-border px-4 py-2 text-sm font-semibold",
+              !seccion && "bg-primary text-primary-foreground",
+            )}
+          >
+            Todas
+          </button>
+          {visibleSections.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => navigate({ search: { seccion: s.id } })}
+              className={cn(
+                "shrink-0 rounded-full border border-border px-4 py-2 text-sm font-semibold",
+                seccion === s.id && "bg-primary text-primary-foreground",
+              )}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+
+        <Tabs
+          value={filter}
+          onValueChange={(v) => setFilter(v as typeof filter)}
+          className="mt-3"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pendientes">Pendientes</TabsTrigger>
+            <TabsTrigger value="hechas">Hechas</TabsTrigger>
+            <TabsTrigger value="todas">Todas</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {tasks.length === 0 ? (
+          <p className="card-soft mt-4 p-4 text-sm text-muted-foreground">
+            No hay tareas para este filtro.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {tasks.map((t) => (
+              <TaskItem
+                key={t.id}
+                task={t}
+                onEdit={(task) => {
+                  setEditing(task);
+                  setOpen(true);
+                }}
+              />
+            ))}
+          </ul>
+        )}
+
+        <TaskDialog
+          open={open}
+          onOpenChange={setOpen}
+          task={editing}
+          defaultSectionId={editing ? undefined : (seccion ?? null)}
+        />
+      </PageShell>
+    </AppGate>
+  );
+}

@@ -36,7 +36,7 @@ export async function organizeBrainDump(
         ? "manana"
         : "semana";
     const match = sections.find(
-      (s) => !s.hidden && low.includes(s.name.toLowerCase().split(" ")[0]),
+      (s) => !s.hidden && low.includes(s.name.toLowerCase().split(" ")[0] ?? s.name.toLowerCase()),
     );
     return {
       title: line.charAt(0).toUpperCase() + line.slice(1),

@@ -63,5 +63,5 @@ export const COLOR_CLASSES: Record<string, { bg: string; text: string; dot: stri
 };
 
 export function colorClasses(color: string) {
-  return COLOR_CLASSES[color] ?? COLOR_CLASSES.terra;
+  return COLOR_CLASSES[color] ?? COLOR_CLASSES['terra']!;
 }

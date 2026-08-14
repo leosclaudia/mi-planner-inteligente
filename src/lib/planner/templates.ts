@@ -13,7 +13,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     key: "trabajo",
     name: "Trabajo",
     icon: "briefcase",
-    color: "sky",
+    color: "cielo",
     description: "Reuniones, entregas y tareas laborales",
   },
   {
@@ -41,7 +41,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     key: "bienestar",
     name: "Bienestar",
     icon: "heart",
-    color: "rose",
+    color: "rosa",
     description: "Hábitos, descanso y movimiento",
   },
   {

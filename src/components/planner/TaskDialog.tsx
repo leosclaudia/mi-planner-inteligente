@@ -31,9 +31,9 @@ export function TaskDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  task?: Task | null;
-  defaultDate?: string | null;
-  defaultSectionId?: string | null;
+  task?: Task | null | undefined;
+  defaultDate?: string | null | undefined;
+  defaultSectionId?: string | null | undefined;
 }) {
   const { visibleSections, state, addTask, updateTask } = usePlanner();
   const [title, setTitle] = useState("");

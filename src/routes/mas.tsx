@@ -1,84 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  ChevronRight,
-  FilePenLine,
-  FolderKanban,
-  CloudCog,
-  Info,
-  RotateCcw,
-  Settings2,
-  Sprout,
-  Languages,
-  Printer,
-} from "lucide-react";
-import { toast } from "sonner";
-import { AppGate } from "@/components/planner/AppGate";
-import { PageShell } from "@/components/planner/PageShell";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { usePlanner } from "@/lib/planner/store";
-import { OWNER_PRESET_KEYS, SECTION_TEMPLATES, sectionFromTemplate } from "@/lib/planner/templates";
-import { useLanguage } from "@/lib/language";
-
-export const Route = createFileRoute("/mas")({
-  head: () => ({ meta: [{ title: "Más | Planner Inteligente" }] }),
-  component: () => <AppGate><MasPage /></AppGate>,
-});
-
-function MasPage() {
-  const { state, replaceState, resetAll } = usePlanner();
-  const { lang, setLang, t } = useLanguage();
-
-  const applyOwnerPreset = () => {
-    const sections = SECTION_TEMPLATES.filter((t) => OWNER_PRESET_KEYS.includes(t.key)).map((t, i) => sectionFromTemplate(t, i));
-    const proyectos = sectionFromTemplate({ key: "proyectos", name: "Proyectos", icon: "wrench", color: "cielo", description: "" }, 0);
-    replaceState({ ...state, settings: { ...state.settings, onboarded: true }, sections: [proyectos, ...sections.map((s, i) => ({ ...s, order: i + 1 }))] });
-    toast.success(t("Configuración de ejemplo aplicada"));
-  };
-
-  return (
-    <PageShell title="Más" subtitle={state.settings.plannerName}>
-      <section className="card-soft mb-4 p-4">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><Languages className="h-5 w-5" /></span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold">{lang === "es" ? "Idioma" : "Language"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{lang === "es" ? "Elegí el idioma de la aplicación." : "Choose the app language."}</p>
-          </div>
-          <div className="flex rounded-2xl border border-border bg-background p-1">
-            <button type="button" onClick={() => setLang("es")} className={`rounded-xl px-3 py-2 text-sm font-bold ${lang === "es" ? "bg-terra-soft text-foreground" : "text-muted-foreground"}`}>ES</button>
-            <button type="button" onClick={() => setLang("en")} className={`rounded-xl px-3 py-2 text-sm font-bold ${lang === "en" ? "bg-terra-soft text-foreground" : "text-muted-foreground"}`}>EN</button>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-2">
-        <RowLink to="/imprimir" icon={Printer} label={lang === "es" ? "Guardar / Imprimir PDF" : "Save / Print PDF"} />
-        <RowLink to="/cuenta" icon={CloudCog} label={t("Mi cuenta y sincronización")} />
-        <RowLink to="/notas" icon={FilePenLine} label={t("Notas y lienzo libre")} />
-        <RowLink to="/proyectos" icon={FolderKanban} label={t("Proyectos")} />
-        <RowLink to="/personalizar" icon={Settings2} label={t("Personalizar mi planner")} />
-      </div>
-      <section className="card-soft mt-6 p-4">
-        <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-olive-soft text-olive"><Sprout className="h-5 w-5" /></span><div className="min-w-0"><h2 className="text-base font-bold">{t("Configuración de ejemplo")}</h2><p className="mt-1 text-sm text-muted-foreground">{t("Carga las secciones Proyectos, Huerta, Pedidos/Ventas y Contenido. Es opcional.")}</p></div></div>
-        <AlertDialog><AlertDialogTrigger asChild><Button variant="outline" className="mt-4 h-12 w-full">{t("Aplicar preset de ejemplo")}</Button></AlertDialogTrigger><AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle>{t("¿Reemplazar tus secciones?")}</AlertDialogTitle><AlertDialogDescription>{t("Tus tareas y proyectos se conservan, pero las secciones actuales se reemplazan.")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="h-12">{t("Cancelar")}</AlertDialogCancel><AlertDialogAction className="h-12" onClick={applyOwnerPreset}>{t("Aplicar")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-      </section>
-      <section className="card-soft mt-4 p-4"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-muted text-muted-foreground"><Info className="h-5 w-5" /></span><p className="min-w-0 text-sm text-muted-foreground">{t("Tus datos se guardan en este navegador y, si iniciás sesión, se sincronizan con tus otros dispositivos.")}</p></div></section>
-      <AlertDialog><AlertDialogTrigger asChild><Button variant="outline" className="mt-4 h-12 w-full text-destructive"><RotateCcw className="h-4 w-4" /> {t("Borrar todos mis datos")}</Button></AlertDialogTrigger><AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle>{t("¿Empezar de cero?")}</AlertDialogTitle><AlertDialogDescription>{t("Se borran secciones, tareas y proyectos de este navegador. No se puede deshacer.")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="h-12">{t("Cancelar")}</AlertDialogCancel><AlertDialogAction className="h-12" onClick={() => resetAll()}>{t("Borrar todo")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-    </PageShell>
-  );
-}
-
-function RowLink({ to, icon: Icon, label }: { to: "/notas" | "/proyectos" | "/personalizar" | "/cuenta" | "/imprimir"; icon: React.ElementType; label: string }) {
-  return <Link to={to} className="card-soft flex items-center gap-3 p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1 truncate font-semibold">{label}</span><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" /></Link>;
-}
+import { ChevronRight,FilePenLine,FolderKanban,CloudCog,Info,RotateCcw,Settings2,Sprout,Languages } from "lucide-react";
+import { toast } from "sonner"; import { AppGate } from "@/components/planner/AppGate"; import { PageShell } from "@/components/planner/PageShell"; import { Button } from "@/components/ui/button"; import { AlertDialog,AlertDialogAction,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle,AlertDialogTrigger } from "@/components/ui/alert-dialog"; import { usePlanner } from "@/lib/planner/store"; import { OWNER_PRESET_KEYS,SECTION_TEMPLATES,sectionFromTemplate } from "@/lib/planner/templates"; import { useLanguage } from "@/lib/language";
+export const Route=createFileRoute("/mas")({head:()=>({meta:[{title:"Más | Planner Inteligente"}]}),component:()=> <AppGate><MasPage/></AppGate>});
+function MasPage(){const{state,replaceState,resetAll}=usePlanner();const{lang,setLang,t}=useLanguage();const applyOwnerPreset=()=>{const sections=SECTION_TEMPLATES.filter(x=>OWNER_PRESET_KEYS.includes(x.key)).map((x,i)=>sectionFromTemplate(x,i));const proyectos=sectionFromTemplate({key:"proyectos",name:"Proyectos",icon:"wrench",color:"cielo",description:""},0);replaceState({...state,settings:{...state.settings,onboarded:true},sections:[proyectos,...sections.map((s,i)=>({...s,order:i+1}))]});toast.success(t("Configuración de ejemplo aplicada"))};return <PageShell title="Más" subtitle={state.settings.plannerName}>
+<section className="card-soft mb-4 p-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><Languages className="h-5 w-5"/></span><div className="min-w-0 flex-1"><h2 className="text-base font-bold">{lang==="es"?"Idioma":"Language"}</h2><p className="mt-1 text-sm text-muted-foreground">{lang==="es"?"Elegí el idioma de la aplicación.":"Choose the app language."}</p></div><div className="flex rounded-2xl border border-border bg-background p-1"><button type="button" onClick={()=>setLang("es")} className={`rounded-xl px-3 py-2 text-sm font-bold ${lang==="es"?"bg-terra-soft text-foreground":"text-muted-foreground"}`}>ES</button><button type="button" onClick={()=>setLang("en")} className={`rounded-xl px-3 py-2 text-sm font-bold ${lang==="en"?"bg-terra-soft text-foreground":"text-muted-foreground"}`}>EN</button></div></div></section>
+<div className="grid gap-2"><RowLink to="/cuenta" icon={CloudCog} label={t("Mi cuenta y sincronización")}/><RowLink to="/notas" icon={FilePenLine} label={t("Notas y lienzo libre")}/><RowLink to="/proyectos" icon={FolderKanban} label={t("Proyectos")}/><RowLink to="/personalizar" icon={Settings2} label={t("Personalizar mi planner")}/></div>
+<section className="card-soft mt-6 p-4"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-olive-soft text-olive"><Sprout className="h-5 w-5"/></span><div className="min-w-0"><h2 className="text-base font-bold">{t("Configuración de ejemplo")}</h2><p className="mt-1 text-sm text-muted-foreground">{t("Carga las secciones Proyectos, Huerta, Pedidos/Ventas y Contenido. Es opcional.")}</p></div></div><AlertDialog><AlertDialogTrigger asChild><Button variant="outline" className="mt-4 h-12 w-full">{t("Aplicar preset de ejemplo")}</Button></AlertDialogTrigger><AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle>{t("¿Reemplazar tus secciones?")}</AlertDialogTitle><AlertDialogDescription>{t("Tus tareas y proyectos se conservan, pero las secciones actuales se reemplazan.")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="h-12">{t("Cancelar")}</AlertDialogCancel><AlertDialogAction className="h-12" onClick={applyOwnerPreset}>{t("Aplicar")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></section>
+<section className="card-soft mt-4 p-4"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-muted text-muted-foreground"><Info className="h-5 w-5"/></span><p className="min-w-0 text-sm text-muted-foreground">{t("Tus datos se guardan en este navegador y, si iniciás sesión, se sincronizan con tus otros dispositivos.")}</p></div></section><AlertDialog><AlertDialogTrigger asChild><Button variant="outline" className="mt-4 h-12 w-full text-destructive"><RotateCcw className="h-4 w-4"/> {t("Borrar todos mis datos")}</Button></AlertDialogTrigger><AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle>{t("¿Empezar de cero?")}</AlertDialogTitle><AlertDialogDescription>{t("Se borran secciones, tareas y proyectos de este navegador. No se puede deshacer.")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="h-12">{t("Cancelar")}</AlertDialogCancel><AlertDialogAction className="h-12" onClick={()=>resetAll()}>{t("Borrar todo")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></PageShell>}
+function RowLink({to,icon:Icon,label}:{to:"/notas"|"/proyectos"|"/personalizar"|"/cuenta";icon:React.ElementType;label:string}){return <Link to={to} className="card-soft flex items-center gap-3 p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><Icon className="h-5 w-5"/></span><span className="min-w-0 flex-1 truncate font-semibold">{label}</span><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground"/></Link>}

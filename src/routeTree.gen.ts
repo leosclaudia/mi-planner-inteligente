@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AsistenteRouteImport } from './routes/asistente'
 import { Route as CalendarioRouteImport } from './routes/calendario'
 import { Route as MasRouteImport } from './routes/mas'
+import { Route as NotasRouteImport } from './routes/notas'
 import { Route as PersonalizarRouteImport } from './routes/personalizar'
 import { Route as ProyectosRouteImport } from './routes/proyectos'
 import { Route as TareasRouteImport } from './routes/tareas'
@@ -37,6 +38,11 @@ const MasRoute = MasRouteImport.update({
   path: '/mas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotasRoute = NotasRouteImport.update({
+  id: '/notas',
+  path: '/notas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PersonalizarRoute = PersonalizarRouteImport.update({
   id: '/personalizar',
   path: '/personalizar',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/asistente'
     | '/calendario'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/asistente'
     | '/calendario'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/asistente'
     | '/calendario'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AsistenteRoute: typeof AsistenteRoute
   CalendarioRoute: typeof CalendarioRoute
   MasRoute: typeof MasRoute
+  NotasRoute: typeof NotasRoute
   PersonalizarRoute: typeof PersonalizarRoute
   ProyectosRoute: typeof ProyectosRoute
   TareasRoute: typeof TareasRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notas': {
+      id: '/notas'
+      path: '/notas'
+      fullPath: '/notas'
+      preLoaderRoute: typeof NotasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/personalizar': {
       id: '/personalizar'
       path: '/personalizar'
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AsistenteRoute: AsistenteRoute,
   CalendarioRoute: CalendarioRoute,
   MasRoute: MasRoute,
+  NotasRoute: NotasRoute,
   PersonalizarRoute: PersonalizarRoute,
   ProyectosRoute: ProyectosRoute,
   TareasRoute: TareasRoute,

@@ -5,6 +5,7 @@ import {
   CaseSensitive,
   Copy,
   Eraser,
+  Highlighter,
   ImagePlus,
   Italic,
   MoreHorizontal,
@@ -43,7 +44,8 @@ const STICKERS: Record<StickerGroup, string[]> = {
   Caritas: ["😊","🥰","😍","🤩","😌","😂","😉","😎","🤗","🥳","😴","🤔","🙌","👏","💪","🙏","💖","💕"],
 };
 
-const COLORS = ["#2F2B29","#A85F5F","#C47D62","#B58A55","#7E6A9A","#5F7892","#B45D85","#8A6F63","#D78591","#4E7C72"];
+const TEXT_COLORS = ["#111111","#5B2C2C","#A84F4F","#D26A4C","#C48A2F","#6F5B3E","#66508D","#4F6E98","#B34F83","#A06C5B","#D47786","#4E7C72","#2F6F5F","#3D7C40","#31708E","#6B6B6B"];
+const HIGHLIGHT_COLORS = ["#FFF59D","#FFE0B2","#F8BBD0","#E1BEE7","#C5CAE9","#B3E5FC","#B2DFDB","#C8E6C9","#DCEDC8","#FFCCBC","#F5F5F5"];
 const FALLBACK_FONTS = ["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond"];
 const FONT_SIZES = [12,14,16,18,20,24,28,32,36,42,48];
 
@@ -68,6 +70,8 @@ function NotasPage() {
   const [penColor, setPenColor] = useState("#2F2B29");
   const [penWidth, setPenWidth] = useState(3);
   const [eraser, setEraser] = useState(false);
+  const [customTextColor, setCustomTextColor] = useState("#A84F4F");
+  const [customHighlightColor, setCustomHighlightColor] = useState("#FFF59D");
 
   useEffect(() => {
     BOXES.forEach(({id}) => {
@@ -147,7 +151,7 @@ function NotasPage() {
           <IconTool title="Fuente y tamaño" active={panel==="fonts"} onClick={()=>setPanel(panel==="fonts"?null:"fonts")}><CaseSensitive /></IconTool>
           <IconTool title="Imagen" onClick={()=>fileRef.current?.click()}><ImagePlus /></IconTool>
           <IconTool title="Stickers" active={panel==="stickers"} onClick={()=>setPanel(panel==="stickers"?null:"stickers")}><SmilePlus /></IconTool>
-          <IconTool title="Color" active={panel==="colors"} onClick={()=>setPanel(panel==="colors"?null:"colors")}><Palette /></IconTool>
+          <IconTool title="Color y resaltador" active={panel==="colors"} onClick={()=>setPanel(panel==="colors"?null:"colors")}><Palette /></IconTool>
           <IconTool title="Escribir a mano" active={panel==="pen"} onClick={()=>setPanel(panel==="pen"?null:"pen")}><Pencil /></IconTool>
           <IconTool title="Más" active={panel==="more"} onClick={()=>setPanel(panel==="more"?null:"more")}><MoreHorizontal /></IconTool>
         </div>
@@ -168,19 +172,30 @@ function NotasPage() {
         <div className="max-h-48 overflow-y-auto"><div className="grid grid-cols-8 gap-2 sm:grid-cols-12">{visibleStickers.map((s,i)=><button key={`${s}-${i}`} className="grid h-10 w-10 place-items-center rounded-xl text-xl hover:bg-muted" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(s)}>{s}</button>)}</div></div>
       </div>}
 
-      {panel==="colors" && <div className="mt-2 flex flex-wrap gap-3 rounded-2xl border bg-card p-3 shadow-sm">{COLORS.map(c=><button key={c} title={c} aria-label={`Color ${c}`} className="h-9 w-9 rounded-full border-2 border-white shadow ring-1 ring-border" style={{backgroundColor:c}} onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{command("foreColor",c);setPanel(null);}} />)}<button className="h-9 rounded-xl border px-3 text-sm" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{command("removeFormat");setPanel(null);}}>Sin formato</button></div>}
+      {panel==="colors" && <div className="mt-2 rounded-2xl border bg-card p-3 shadow-sm">
+        <div className="mb-3 flex items-center gap-2"><Palette className="h-4 w-4"/><span className="text-sm font-bold">Color del texto</span></div>
+        <div className="flex flex-wrap gap-2">{TEXT_COLORS.map(c=><button key={c} title={c} aria-label={`Color de texto ${c}`} className="h-9 w-9 rounded-full border-2 border-white shadow ring-1 ring-border" style={{backgroundColor:c}} onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>command("foreColor",c)} />)}
+          <label className="relative grid h-9 min-w-28 cursor-pointer place-items-center rounded-xl border bg-background px-3 text-xs font-semibold">Cualquier color<input type="color" value={customTextColor} onMouseDown={rememberSelection} onChange={e=>{setCustomTextColor(e.target.value);command("foreColor",e.target.value);}} className="absolute inset-0 h-full w-full cursor-pointer opacity-0"/></label>
+        </div>
+        <div className="my-3 border-t"/>
+        <div className="mb-3 flex items-center gap-2"><Highlighter className="h-4 w-4"/><span className="text-sm font-bold">Resaltador</span></div>
+        <div className="flex flex-wrap gap-2">{HIGHLIGHT_COLORS.map(c=><button key={c} title={c} aria-label={`Resaltador ${c}`} className="h-9 w-9 rounded-xl border shadow-sm" style={{backgroundColor:c}} onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>command("backColor",c)} />)}
+          <label className="relative grid h-9 min-w-28 cursor-pointer place-items-center rounded-xl border bg-background px-3 text-xs font-semibold">Otro resaltado<input type="color" value={customHighlightColor} onMouseDown={rememberSelection} onChange={e=>{setCustomHighlightColor(e.target.value);command("backColor",e.target.value);}} className="absolute inset-0 h-full w-full cursor-pointer opacity-0"/></label>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2"><button className="h-9 rounded-xl border px-3 text-sm" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>command("foreColor","#2F2B29")}>Texto normal</button><button className="h-9 rounded-xl border px-3 text-sm" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>command("backColor","transparent")}>Quitar resaltado</button><button className="h-9 rounded-xl border px-3 text-sm" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>command("removeFormat")}>Quitar formato</button></div>
+      </div>}
 
       {panel==="pen" && <div className="mt-2 rounded-2xl border bg-card p-3 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <button className={`h-10 rounded-xl border px-3 text-sm font-semibold ${!eraser?"bg-[#F3DDD6] border-[#D9A596]":""}`} onClick={()=>setEraser(false)}><Pencil className="mr-1 inline h-4 w-4"/>Manuscrito</button>
-          <button className={`h-10 rounded-xl border px-3 text-sm font-semibold ${eraser?"bg-[#F3DDD6] border-[#D9A596]":""}`} onClick={()=>setEraser(true)}><Eraser className="mr-1 inline h-4 w-4"/>Goma</button>
-          <button className="grid h-10 w-10 place-items-center rounded-xl border" onClick={undoDraw} aria-label="Deshacer"><Undo2 className="h-4 w-4"/></button>
-          <button className="grid h-10 w-10 place-items-center rounded-xl border" onClick={redoDraw} aria-label="Rehacer"><Redo2 className="h-4 w-4"/></button>
-          <select className="h-10 rounded-xl border bg-background px-2 text-sm" value={penWidth} onChange={e=>setPenWidth(Number(e.target.value))}><option value={2}>Fino</option><option value={3}>Medio</option><option value={5}>Grueso</option></select>
+        <div className="flex flex-wrap gap-2">
+          <TextTool onClick={()=>setEraser(false)}><Pencil/>Manuscrito</TextTool>
+          <TextTool onClick={()=>setEraser(true)}><Eraser/>Goma</TextTool>
+          <TextTool onClick={undoDraw}><Undo2/></TextTool>
+          <TextTool onClick={redoDraw}><Redo2/></TextTool>
+          <select className="h-10 rounded-xl border bg-background px-3 text-sm" value={penWidth} onChange={e=>setPenWidth(Number(e.target.value))}><option value={2}>Fino</option><option value={3}>Medio</option><option value={5}>Grueso</option><option value={8}>Muy grueso</option></select>
           <input type="color" value={penColor} onChange={e=>setPenColor(e.target.value)} className="h-10 w-12 rounded-xl border bg-card p-1" aria-label="Color del lápiz"/>
-          <button className="h-10 rounded-xl border px-3 text-sm" onClick={clearDrawing}>Borrar dibujo</button>
+          <TextTool onClick={clearDrawing}>Borrar dibujo</TextTool>
         </div>
-        <button className="mt-2 w-full rounded-xl border border-[#D9A596] bg-[#F8ECE8] px-3 py-2 text-sm font-semibold" onClick={handwritingToText}>Escribir con lápiz y convertir a texto</button>
+        <button type="button" onClick={handwritingToText} className="mt-2 h-10 w-full rounded-xl border border-[#D9A596] bg-[#F9E8E2] text-sm font-semibold">Escribir con lápiz y convertir a texto</button>
         <p className="mt-2 text-xs text-muted-foreground">En tablet/celular, esta opción usa la escritura manuscrita del teclado o del sistema cuando está disponible. Manuscrito deja el trazo tal cual.</p>
       </div>}
 
@@ -189,7 +204,7 @@ function NotasPage() {
     </div>
 
     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>addImage(e.target.files?.[0])}/>
-    <div className="space-y-4">{BOXES.map(box=><section key={box.id} onPointerDown={()=>setActive(box.id)} className={`relative overflow-hidden rounded-[1.4rem] border bg-card shadow-sm ${active===box.id?"ring-2 ring-[#D9A596]/35 border-[#D9A596]":"border-border"}`}><div className={`${box.tone} border-b border-border px-4 py-2 text-xs font-extrabold tracking-wide text-foreground`}>{box.title}</div><div ref={el=>{refs.current[box.id]=el;}} contentEditable={panel!=="pen" || active!==box.id} suppressContentEditableWarning onFocus={()=>setActive(box.id)} onInput={()=>{rememberSelection();saveBox(box.id);}} onKeyUp={rememberSelection} onMouseUp={rememberSelection} className="relative z-10 min-h-36 px-4 py-4 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" data-placeholder={box.placeholder}/><canvas ref={el=>{canvasRefs.current[box.id]=el;}} width={1200} height={420} className={`absolute bottom-0 left-0 right-0 z-20 h-[calc(100%-33px)] w-full touch-none ${panel==="pen"&&active===box.id?"pointer-events-auto":"pointer-events-none"}`}/></section>)}</div>
+    <div className="space-y-4">{BOXES.map(box=><section key={box.id} onPointerDown={()=>setActive(box.id)} className={`overflow-hidden rounded-[1.4rem] border bg-card shadow-sm ${active===box.id?"ring-2 ring-[#D9A596]/35 border-[#D9A596]":"border-border"}`}><div className={`${box.tone} border-b border-border px-4 py-2 text-xs font-extrabold tracking-wide text-foreground`}>{box.title}</div><div className="relative min-h-36"><div ref={el=>{refs.current[box.id]=el;}} contentEditable={panel!=="pen" || active!==box.id} suppressContentEditableWarning onFocus={()=>setActive(box.id)} onInput={()=>{rememberSelection();saveBox(box.id);}} onKeyUp={rememberSelection} onMouseUp={rememberSelection} className="relative z-10 min-h-36 px-4 py-4 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" data-placeholder={box.placeholder}/><canvas ref={el=>{canvasRefs.current[box.id]=el;}} width={1200} height={500} className={`absolute inset-0 h-full w-full touch-none ${panel==="pen"&&active===box.id?"z-20 cursor-crosshair":"pointer-events-none z-0"}`}/></div></section>)}</div>
   </PageShell>;
 }
 

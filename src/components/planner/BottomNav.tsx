@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarDays, Home, ListChecks, MoreHorizontal, NotebookPen } from "lucide-react";
+import { useLanguage } from "@/lib/language";
 
 const items = [
   { to: "/", label: "Inicio", icon: Home, exact: true },
@@ -10,6 +11,8 @@ const items = [
 ] as const;
 
 export function BottomNav() {
+  const { t } = useLanguage();
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/96 shadow-[0_-6px_22px_rgba(85,72,65,0.06)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-3xl items-stretch justify-between px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
@@ -21,7 +24,7 @@ export function BottomNav() {
             className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-muted-foreground transition-all data-[status=active]:bg-terra-soft data-[status=active]:text-foreground"
           >
             <Icon className="h-6 w-6" />
-            <span className="truncate text-[13px] font-bold leading-none">{label}</span>
+            <span className="truncate text-[13px] font-bold leading-none">{t(label)}</span>
           </Link>
         ))}
       </div>

@@ -182,7 +182,7 @@ function NotasPage() {
     const pixels = sourceCtx.getImageData(0,0,source.width,source.height);
     let minX=source.width,minY=source.height,maxX=-1,maxY=-1;
     for(let y=0;y<source.height;y++) for(let x=0;x<source.width;x++) {
-      const a=pixels.data[(y*source.width+x)*4+3];
+      const a=pixels.data[(y*source.width+x)*4+3] ?? 0;
       if(a>20){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
     }
     if(maxX<minX||maxY<minY)return null;
@@ -193,7 +193,7 @@ function NotasPage() {
     const cctx=crop.getContext("2d");if(!cctx)return null;
     cctx.fillStyle="#fff";cctx.fillRect(0,0,w,h);cctx.drawImage(source,minX,minY,w,h,0,0,w,h);
     const img=cctx.getImageData(0,0,w,h);
-    for(let i=0;i<img.data.length;i+=4){const brightness=(img.data[i]+img.data[i+1]+img.data[i+2])/3;const ink=brightness<245;img.data[i]=ink?0:255;img.data[i+1]=ink?0:255;img.data[i+2]=ink?0:255;img.data[i+3]=255;}
+    for(let i=0;i<img.data.length;i+=4){const brightness=((img.data[i] ?? 0)+(img.data[i+1] ?? 0)+(img.data[i+2] ?? 0))/3;const ink=brightness<245;img.data[i]=ink?0:255;img.data[i+1]=ink?0:255;img.data[i+2]=ink?0:255;img.data[i+3]=255;}
     cctx.putImageData(img,0,0);
     const scale=3,out=document.createElement("canvas");out.width=w*scale;out.height=h*scale;
     const octx=out.getContext("2d");if(!octx)return null;octx.fillStyle="#fff";octx.fillRect(0,0,out.width,out.height);octx.imageSmoothingEnabled=false;octx.drawImage(crop,0,0,out.width,out.height);
@@ -209,7 +209,7 @@ function NotasPage() {
       const moduleUrl="https://cdn.jsdelivr.net/npm/tesseract.js@6/+esm";
       const tesseract = await import(/* @vite-ignore */ moduleUrl) as { createWorker:(lang:string)=>Promise<any>; PSM:Record<string,string> };
       const worker=await tesseract.createWorker("spa");
-      await worker.setParameters({tessedit_pageseg_mode:tesseract.PSM.SINGLE_BLOCK});
+      await worker.setParameters({tessedit_pageseg_mode:tesseract.PSM['SINGLE_BLOCK']});
       const result=await worker.recognize(prepared.toDataURL("image/png"));
       await worker.terminate();
       const text=String(result.data.text??"").replace(/\s+/g," ").trim();

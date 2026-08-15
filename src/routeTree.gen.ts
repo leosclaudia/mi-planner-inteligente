@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AsistenteRouteImport } from './routes/asistente'
 import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as MasRouteImport } from './routes/mas'
+import { Route as NotasRouteImport } from './routes/notas'
 import { Route as PersonalizarRouteImport } from './routes/personalizar'
 import { Route as ProyectosRouteImport } from './routes/proyectos'
 import { Route as TareasRouteImport } from './routes/tareas'
@@ -32,9 +34,19 @@ const CalendarioRoute = CalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CuentaRoute = CuentaRouteImport.update({
+  id: '/cuenta',
+  path: '/cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MasRoute = MasRouteImport.update({
   id: '/mas',
   path: '/mas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotasRoute = NotasRouteImport.update({
+  id: '/notas',
+  path: '/notas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PersonalizarRoute = PersonalizarRouteImport.update({
@@ -57,7 +69,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/cuenta': typeof CuentaRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -66,7 +80,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/cuenta': typeof CuentaRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -76,7 +92,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/calendario': typeof CalendarioRoute
+  '/cuenta': typeof CuentaRoute
   '/mas': typeof MasRoute
+  '/notas': typeof NotasRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
   '/tareas': typeof TareasRoute
@@ -87,7 +105,9 @@ export interface FileRouteTypes {
     | '/'
     | '/asistente'
     | '/calendario'
+    | '/cuenta'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -96,7 +116,9 @@ export interface FileRouteTypes {
     | '/'
     | '/asistente'
     | '/calendario'
+    | '/cuenta'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -105,7 +127,9 @@ export interface FileRouteTypes {
     | '/'
     | '/asistente'
     | '/calendario'
+    | '/cuenta'
     | '/mas'
+    | '/notas'
     | '/personalizar'
     | '/proyectos'
     | '/tareas'
@@ -115,7 +139,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AsistenteRoute: typeof AsistenteRoute
   CalendarioRoute: typeof CalendarioRoute
+  CuentaRoute: typeof CuentaRoute
   MasRoute: typeof MasRoute
+  NotasRoute: typeof NotasRoute
   PersonalizarRoute: typeof PersonalizarRoute
   ProyectosRoute: typeof ProyectosRoute
   TareasRoute: typeof TareasRoute
@@ -144,11 +170,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cuenta': {
+      id: '/cuenta'
+      path: '/cuenta'
+      fullPath: '/cuenta'
+      preLoaderRoute: typeof CuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mas': {
       id: '/mas'
       path: '/mas'
       fullPath: '/mas'
       preLoaderRoute: typeof MasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notas': {
+      id: '/notas'
+      path: '/notas'
+      fullPath: '/notas'
+      preLoaderRoute: typeof NotasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/personalizar': {
@@ -179,7 +219,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AsistenteRoute: AsistenteRoute,
   CalendarioRoute: CalendarioRoute,
+  CuentaRoute: CuentaRoute,
   MasRoute: MasRoute,
+  NotasRoute: NotasRoute,
   PersonalizarRoute: PersonalizarRoute,
   ProyectosRoute: ProyectosRoute,
   TareasRoute: TareasRoute,

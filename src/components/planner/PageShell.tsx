@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { SyncBadge } from "./SyncBadge";
 
 export function PageShell({
   title,
@@ -18,9 +19,12 @@ export function PageShell({
         <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4">
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold">{title}</h1>
-            {subtitle ? (
-              <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {subtitle ? (
+                <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+              ) : null}
+              <SyncBadge className="shrink-0" />
+            </div>
           </div>
           {action ? <div className="shrink-0">{action}</div> : null}
         </div>

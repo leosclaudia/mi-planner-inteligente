@@ -3,14 +3,13 @@ import { CalendarDays, ListChecks, NotebookPen, Sparkles } from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { BottomNav } from "@/components/planner/BottomNav";
 import { usePlanner } from "@/lib/planner/store";
-import { fmt } from "@/lib/planner/date";
 import { useLanguage } from "@/lib/language";
 
 export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Planner Inteligente Personalizable" }] }), component: () => <AppGate><InicioSimple /></AppGate> });
 
 function InicioSimple() {
   const { state } = usePlanner();
-  const { t, lang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const today = new Date();
   const pending = state.tasks.filter((task) => !task.done).length;
   const dateText = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-AR", { weekday: "long", day: "numeric", month: "long" }).format(today);
@@ -18,8 +17,16 @@ function InicioSimple() {
     <div className="min-h-screen bg-background">
       <main className="safe-bottom mx-auto max-w-3xl px-4 pt-8">
         <header className="mb-6">
-          <p className="text-sm font-semibold capitalize text-muted-foreground">{dateText}</p>
-          <h1 className="mt-1 text-[30px] font-bold leading-tight">{state.settings.plannerName || "Mi Planner"}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold capitalize text-muted-foreground">{dateText}</p>
+              <h1 className="mt-1 text-[30px] font-bold leading-tight">{state.settings.plannerName || "Mi Planner"}</h1>
+            </div>
+            <div className="inline-flex shrink-0 rounded-full border border-border bg-card p-1 shadow-sm" aria-label={t("Idioma")}>
+              <button type="button" onClick={() => setLang("es")} className={`rounded-full px-3 py-1.5 text-sm font-bold transition ${lang === "es" ? "bg-terra-soft text-foreground" : "text-muted-foreground"}`} aria-pressed={lang === "es"}>ES</button>
+              <button type="button" onClick={() => setLang("en")} className={`rounded-full px-3 py-1.5 text-sm font-bold transition ${lang === "en" ? "bg-terra-soft text-foreground" : "text-muted-foreground"}`} aria-pressed={lang === "en"}>EN</button>
+            </div>
+          </div>
           <p className="mt-1 text-base text-muted-foreground">{t("Un espacio simple para organizar, escribir y recordar.")}</p>
         </header>
         <section className="grid gap-3">

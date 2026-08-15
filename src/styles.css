@@ -77,7 +77,6 @@
   --border: #D8CCC5;
   --input: #D8CCC5;
   --ring: #CFA38E;
-
   --terra: #D3A07C;
   --terra-soft: #F5E7DA;
   --olive: #B8AFA4;
@@ -90,7 +89,6 @@
   --cielo-soft: #E9EEF1;
   --rosa: #C98E91;
   --rosa-soft: #F4E3E4;
-
   --shadow-soft: 0 2px 6px rgba(85, 72, 65, 0.05), 0 12px 26px rgba(85, 72, 65, 0.07);
   --gradient-warm: linear-gradient(135deg, #F5E7DA 0%, #EFE8F1 100%);
 }
@@ -110,11 +108,7 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
   button, input, textarea, select { font-size: 1rem; }
-  h1, h2, h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em;
-    color: var(--foreground);
-  }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; color: var(--foreground); }
 }
 
 @utility card-soft {
@@ -125,7 +119,16 @@
 }
 
 @utility gradient-warm { background-image: var(--gradient-warm); }
+@utility safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem); }
 
-@utility safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem);
+@media print {
+  @page { size: auto; margin: 12mm; }
+  html, body { background: #fff !important; color: #222 !important; }
+  body { padding: 0 !important; }
+  .safe-bottom { padding-bottom: 0 !important; }
+  .sticky { display: none !important; }
+  .card-soft, section { break-inside: avoid; page-break-inside: avoid; box-shadow: none !important; }
+  button, input, select, textarea { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  canvas, img { max-width: 100% !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  [contenteditable="true"] { outline: none !important; }
 }

@@ -9,6 +9,7 @@ import {
   Settings2,
   Sprout,
   Languages,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppGate } from "@/components/planner/AppGate";
@@ -62,6 +63,7 @@ function MasPage() {
       </section>
 
       <div className="grid gap-2">
+        <RowLink to="/imprimir" icon={Printer} label={lang === "es" ? "Guardar / Imprimir PDF" : "Save / Print PDF"} />
         <RowLink to="/cuenta" icon={CloudCog} label={t("Mi cuenta y sincronización")} />
         <RowLink to="/notas" icon={FilePenLine} label={t("Notas y lienzo libre")} />
         <RowLink to="/proyectos" icon={FolderKanban} label={t("Proyectos")} />
@@ -77,6 +79,6 @@ function MasPage() {
   );
 }
 
-function RowLink({ to, icon: Icon, label }: { to: "/notas" | "/proyectos" | "/personalizar" | "/cuenta"; icon: React.ElementType; label: string }) {
+function RowLink({ to, icon: Icon, label }: { to: "/notas" | "/proyectos" | "/personalizar" | "/cuenta" | "/imprimir"; icon: React.ElementType; label: string }) {
   return <Link to={to} className="card-soft flex items-center gap-3 p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1 truncate font-semibold">{label}</span><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" /></Link>;
 }

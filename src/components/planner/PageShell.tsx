@@ -17,6 +17,12 @@ export function PageShell({
 }) {
   const { t, lang } = useLanguage();
   const printLabel = lang === "en" ? "Print / Save PDF" : "Imprimir / Guardar PDF";
+  const printDate = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
 
   return (
     <div className="min-h-screen bg-background print:min-h-0 print:bg-white">
@@ -44,6 +50,21 @@ export function PageShell({
           </div>
         </div>
       </header>
+
+      <section className="hidden print:block print-brand-header">
+        <div className="print-brand-top">
+          <img src="/icon-192.png" alt="Mi Planner Inteligente" className="print-brand-icon" />
+          <div>
+            <div className="print-brand-name">Mi Planner Inteligente</div>
+            <div className="print-brand-tagline">{lang === "en" ? "Your personal digital planner" : "Tu planner digital personal"}</div>
+          </div>
+        </div>
+        <div className="print-brand-meta">
+          <div className="print-brand-section">{t(title)}</div>
+          <div className="print-brand-date">{printDate}</div>
+        </div>
+      </section>
+
       <main className="safe-bottom mx-auto max-w-3xl px-4 pt-4 print:max-w-none print:px-0 print:pt-0">{children}</main>
       <div className="print:hidden"><BottomNav /></div>
     </div>

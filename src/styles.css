@@ -33,7 +33,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
+  --color-ring-offset-background: var(--ring-offset-background);
   --color-terra: var(--terra);
   --color-terra-soft: var(--terra-soft);
   --color-olive: var(--olive);
@@ -77,6 +77,7 @@
   --border: #D8CCC5;
   --input: #D8CCC5;
   --ring: #CFA38E;
+  --ring-offset-background: #F8F4EE;
   --terra: #D3A07C;
   --terra-soft: #F5E7DA;
   --olive: #B8AFA4;
@@ -131,4 +132,53 @@
   button, input, select, textarea { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   canvas, img { max-width: 100% !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   [contenteditable="true"] { outline: none !important; }
+
+  .print-brand-header {
+    margin: 0 0 10mm;
+    padding: 0 0 7mm;
+    border-bottom: 2px solid #D9A58F;
+  }
+  .print-brand-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5mm;
+  }
+  .print-brand-icon {
+    width: 26mm !important;
+    height: 26mm !important;
+    object-fit: contain;
+    border-radius: 6mm;
+  }
+  .print-brand-name {
+    font-family: var(--font-display);
+    font-size: 23pt;
+    font-weight: 700;
+    color: #6C5069;
+    line-height: 1.05;
+  }
+  .print-brand-tagline {
+    margin-top: 1.5mm;
+    font-size: 10pt;
+    color: #7B7270;
+  }
+  .print-brand-meta {
+    margin-top: 6mm;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8mm;
+  }
+  .print-brand-section {
+    font-family: var(--font-display);
+    font-size: 16pt;
+    font-weight: 700;
+    color: #3F3A3A;
+  }
+  .print-brand-date {
+    font-size: 9.5pt;
+    color: #7B7270;
+    text-transform: capitalize;
+    text-align: right;
+  }
 }

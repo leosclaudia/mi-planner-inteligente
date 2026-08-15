@@ -20,43 +20,58 @@ export function PageShell({
 
   useEffect(() => {
     if (title !== "Notas") return;
-    const labels = ["HOY", "PRIORIDADES", "RECORDATORIOS", "LIENZO LIBRE", "TODAY", "PRIORITIES", "REMINDERS", "FREE CANVAS"];
-    const editable = Array.from(document.querySelectorAll<HTMLElement>('[contenteditable="true"]'));
 
+    const labelMap: Record<string, string> = {
+      HOY: lang === "en" ? "TODAY" : "HOY",
+      PRIORIDADES: lang === "en" ? "PRIORITIES" : "PRIORIDADES",
+      RECORDATORIOS: lang === "en" ? "REMINDERS" : "RECORDATORIOS",
+      "LIENZO LIBRE": lang === "en" ? "FREE CANVAS" : "LIENZO LIBRE",
+      TODAY: "TODAY",
+      PRIORITIES: "PRIORITIES",
+      REMINDERS: "REMINDERS",
+      "FREE CANVAS": "FREE CANVAS",
+    };
+
+    const cards = Array.from(document.querySelectorAll<HTMLElement>("main section"));
     const cleanupFns: Array<() => void> = [];
-    editable.forEach((editor) => {
-      let card: HTMLElement | null = editor;
-      for (let i = 0; i < 6 && card; i += 1) {
-        const text = card.innerText || "";
-        if (labels.some((label) => text.trimStart().startsWith(label)) && card.querySelector("canvas")) break;
-        card = card.parentElement;
-      }
-      if (!card || card.dataset.printableNote === "true") return;
-      const heading = labels.find((label) => (card?.innerText || "").trimStart().startsWith(label));
+
+    cards.forEach((card) => {
+      const heading = card.firstElementChild as HTMLElement | null;
       if (!heading) return;
+      const rawTitle = (heading.textContent || "").trim().toUpperCase();
+      const matched = Object.keys(labelMap).find((key) => rawTitle.startsWith(key));
+      if (!matched || card.dataset.printableNote === "true") return;
 
       card.dataset.printableNote = "true";
+      card.dataset.noteTitle = labelMap[matched];
       card.classList.add("planner-print-card");
+      heading.classList.add("planner-note-heading");
+
       const button = document.createElement("button");
       button.type = "button";
       button.className = "planner-note-print-button";
-      button.innerHTML = `<span aria-hidden="true">🖨️</span><span>${lang === "en" ? "Print" : "Imprimir"}</span>`;
-      button.setAttribute("aria-label", `${lang === "en" ? "Print" : "Imprimir"} ${heading}`);
-      button.addEventListener("click", (event) => {
+      button.innerHTML = `<span aria-hidden="true">🖨️</span><span>${lang === "en" ? "Print only" : "Imprimir solo"}</span>`;
+      button.setAttribute("aria-label", `${lang === "en" ? "Print only" : "Imprimir solo"} ${labelMap[matched]}`);
+
+      const printOne = (event: Event) => {
         event.preventDefault();
         event.stopPropagation();
         document.body.dataset.printMode = "single-note";
-        card!.dataset.printSelected = "true";
-        document.body.dataset.printSection = heading;
-        window.print();
-        window.setTimeout(() => {
-          delete document.body.dataset.printMode;
-          delete document.body.dataset.printSection;
-          delete card!.dataset.printSelected;
-        }, 500);
+        document.body.dataset.printSection = labelMap[matched];
+        card.dataset.printSelected = "true";
+        window.setTimeout(() => window.print(), 30);
+      };
+
+      button.addEventListener("click", printOne);
+      heading.appendChild(button);
+      cleanupFns.push(() => {
+        button.removeEventListener("click", printOne);
+        button.remove();
+        delete card.dataset.printableNote;
+        delete card.dataset.noteTitle;
+        card.classList.remove("planner-print-card");
+        heading.classList.remove("planner-note-heading");
       });
-      card.appendChild(button);
-      cleanupFns.push(() => button.remove());
     });
 
     const afterPrint = () => {
@@ -65,11 +80,20 @@ export function PageShell({
       document.querySelectorAll<HTMLElement>('[data-print-selected="true"]').forEach((el) => delete el.dataset.printSelected);
     };
     window.addEventListener("afterprint", afterPrint);
+
     return () => {
       cleanupFns.forEach((fn) => fn());
       window.removeEventListener("afterprint", afterPrint);
+      afterPrint();
     };
   }, [title, lang]);
+
+  const printAll = () => {
+    delete document.body.dataset.printMode;
+    delete document.body.dataset.printSection;
+    document.querySelectorAll<HTMLElement>('[data-print-selected="true"]').forEach((el) => delete el.dataset.printSelected);
+    window.print();
+  };
 
   return (
     <div className="min-h-screen bg-background print:min-h-0 print:bg-white">
@@ -90,7 +114,7 @@ export function PageShell({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" onClick={() => { delete document.body.dataset.printMode; delete document.body.dataset.printSection; window.print(); }} title={printLabel} aria-label={printLabel} className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm">
+            <button type="button" onClick={printAll} title={printLabel} aria-label={printLabel} className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm">
               <Printer className="h-4 w-4" />
               <span className="hidden sm:inline">{lang === "en" ? "Print / Save" : "Imprimir / Guardar"}</span>
             </button>

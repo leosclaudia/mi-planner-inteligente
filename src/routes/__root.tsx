@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlannerProvider } from "@/lib/planner/store";
 import { Toaster } from "@/components/ui/sonner";
 import { SyncProvider } from "@/lib/planner/sync";
-
+import { LanguageProvider } from "@/lib/language";
 
 function NotFoundComponent() {
   return (
@@ -123,7 +123,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <HeadContent />
       </head>
@@ -140,14 +140,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SyncProvider>
-        <PlannerProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <Toaster position="top-center" richColors />
-        </PlannerProvider>
-      </SyncProvider>
+      <LanguageProvider>
+        <SyncProvider>
+          <PlannerProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <Toaster position="top-center" richColors />
+          </PlannerProvider>
+        </SyncProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
-

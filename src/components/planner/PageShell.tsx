@@ -29,20 +29,19 @@ export function PageShell({
               <SyncBadge className="shrink-0" />
             </div>
           </div>
-          {action ? (
-            <div className="shrink-0">{action}</div>
-          ) : (
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => window.print()}
               title={printLabel}
               aria-label={printLabel}
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold shadow-sm"
             >
               <Printer className="h-4 w-4" />
               <span className="hidden sm:inline">{lang === "en" ? "Print / Save" : "Imprimir / Guardar"}</span>
             </button>
-          )}
+            {action ? <div>{action}</div> : null}
+          </div>
         </div>
       </header>
       <main className="safe-bottom mx-auto max-w-3xl px-4 pt-4 print:max-w-none print:px-0 print:pt-0">{children}</main>

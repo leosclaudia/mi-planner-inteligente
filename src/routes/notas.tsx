@@ -4,15 +4,19 @@ import {
   Bold,
   CaseSensitive,
   Copy,
+  Eraser,
   ImagePlus,
   Italic,
   MoreHorizontal,
   Palette,
+  Pencil,
+  Redo2,
   Scissors,
   Search,
   SmilePlus,
   Trash2,
   Underline,
+  Undo2,
 } from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
@@ -20,7 +24,7 @@ import { PageShell } from "@/components/planner/PageShell";
 export const Route = createFileRoute("/notas")({ component: () => <AppGate><NotasPage /></AppGate> });
 
 type BoxId = "hoy" | "prioridades" | "recordatorios" | "libre";
-type Panel = "stickers" | "colors" | "fonts" | "more" | null;
+type Panel = "stickers" | "colors" | "fonts" | "pen" | "more" | null;
 type StickerGroup = "Favoritos" | "Agenda" | "Deco" | "Comida" | "Viajes" | "Caritas";
 
 const BOXES: { id: BoxId; title: string; tone: string; placeholder: string }[] = [
@@ -44,11 +48,15 @@ const FALLBACK_FONTS = ["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Tim
 const FONT_SIZES = [12,14,16,18,20,24,28,32,36,42,48];
 
 function storageKey(id: BoxId) { return `planner-lienzo-${id}-v2`; }
+function drawKey(id: BoxId) { return `planner-dibujo-${id}-v1`; }
 
 function NotasPage() {
   const refs = useRef<Record<BoxId, HTMLDivElement | null>>({ hoy:null, prioridades:null, recordatorios:null, libre:null });
+  const canvasRefs = useRef<Record<BoxId, HTMLCanvasElement | null>>({ hoy:null, prioridades:null, recordatorios:null, libre:null });
   const fileRef = useRef<HTMLInputElement>(null);
   const selectionRef = useRef<Range | null>(null);
+  const drawHistory = useRef<Record<BoxId, string[]>>({ hoy:[], prioridades:[], recordatorios:[], libre:[] });
+  const drawFuture = useRef<Record<BoxId, string[]>>({ hoy:[], prioridades:[], recordatorios:[], libre:[] });
   const [active, setActive] = useState<BoxId>("hoy");
   const [copiedHtml, setCopiedHtml] = useState("");
   const [panel, setPanel] = useState<Panel>(null);
@@ -57,8 +65,45 @@ function NotasPage() {
   const [fonts, setFonts] = useState(FALLBACK_FONTS);
   const [fontStatus, setFontStatus] = useState("");
   const [fontSize, setFontSize] = useState(16);
+  const [penColor, setPenColor] = useState("#2F2B29");
+  const [penWidth, setPenWidth] = useState(3);
+  const [eraser, setEraser] = useState(false);
 
-  useEffect(() => { BOXES.forEach(({id}) => { const el=refs.current[id]; if(el) el.innerHTML=localStorage.getItem(storageKey(id)) ?? ""; }); }, []);
+  useEffect(() => {
+    BOXES.forEach(({id}) => {
+      const el=refs.current[id];
+      if(el) el.innerHTML=localStorage.getItem(storageKey(id)) ?? "";
+      const saved=localStorage.getItem(drawKey(id));
+      const canvas=canvasRefs.current[id];
+      const ctx=canvas?.getContext("2d");
+      if(saved && canvas && ctx){
+        const img=new Image();
+        img.onload=()=>ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        img.src=saved;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const canvas=canvasRefs.current[active];
+    if(!canvas || panel!=="pen") return;
+    const ctx=canvas.getContext("2d");
+    if(!ctx) return;
+    let drawing=false;
+    const point=(e:PointerEvent)=>{ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*canvas.width,y:(e.clientY-r.top)/r.height*canvas.height}; };
+    const saveSnapshot=()=>{
+      const data=canvas.toDataURL("image/png");
+      drawHistory.current[active].push(data);
+      if(drawHistory.current[active].length>25) drawHistory.current[active].shift();
+      drawFuture.current[active]=[];
+      localStorage.setItem(drawKey(active),data);
+    };
+    const down=(e:PointerEvent)=>{ drawing=true; canvas.setPointerCapture(e.pointerId); const p=point(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
+    const move=(e:PointerEvent)=>{ if(!drawing)return; const p=point(e); ctx.lineWidth=eraser?18:penWidth; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.globalCompositeOperation=eraser?"destination-out":"source-over"; ctx.strokeStyle=penColor; ctx.lineTo(p.x,p.y); ctx.stroke(); };
+    const up=()=>{ if(!drawing)return; drawing=false; ctx.globalCompositeOperation="source-over"; saveSnapshot(); };
+    canvas.addEventListener("pointerdown",down); canvas.addEventListener("pointermove",move); canvas.addEventListener("pointerup",up); canvas.addEventListener("pointercancel",up);
+    return ()=>{ canvas.removeEventListener("pointerdown",down); canvas.removeEventListener("pointermove",move); canvas.removeEventListener("pointerup",up); canvas.removeEventListener("pointercancel",up); };
+  }, [active,panel,penColor,penWidth,eraser]);
 
   const saveBox=(id:BoxId)=>{ const el=refs.current[id]; if(el) localStorage.setItem(storageKey(id),el.innerHTML); };
   const rememberSelection=()=>{ const s=window.getSelection(); if(s && s.rangeCount && refs.current[active]?.contains(s.anchorNode)) selectionRef.current=s.getRangeAt(0).cloneRange(); };
@@ -67,27 +112,14 @@ function NotasPage() {
   const command=(cmd:string,value?:string)=>{ focus(); document.execCommand(cmd,false,value); rememberSelection(); saveBox(active); };
   const insertSticker=(s:string)=>{ focus(); document.execCommand("insertText",false,s); rememberSelection(); saveBox(active); };
   const applyFont=(family:string)=>{ command("fontName",family); };
-  const applySize=(px:number)=>{
-    focus();
-    document.execCommand("fontSize",false,"7");
-    const root=refs.current[active];
-    root?.querySelectorAll('font[size="7"]').forEach((node)=>{
-      const el=node as HTMLElement;
-      el.removeAttribute("size");
-      el.style.fontSize=`${px}px`;
-    });
-    setFontSize(px); rememberSelection(); saveBox(active);
-  };
+  const applySize=(px:number)=>{ focus(); document.execCommand("fontSize",false,"7"); const root=refs.current[active]; root?.querySelectorAll('font[size="7"]').forEach((node)=>{ const el=node as HTMLElement; el.removeAttribute("size"); el.style.fontSize=`${px}px`; }); setFontSize(px); rememberSelection(); saveBox(active); };
 
   const loadDeviceFonts=async()=>{
     setFontStatus("");
     const w=window as Window & { queryLocalFonts?: () => Promise<Array<{family:string}>> };
     if(!w.queryLocalFonts){ setFontStatus("Este navegador no permite listar las fuentes instaladas. Podés usar las fuentes compatibles de abajo."); return; }
-    try {
-      const local=await w.queryLocalFonts();
-      const names=[...new Set(local.map(f=>f.family).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-      if(names.length){ setFonts(names); setFontStatus(`${names.length} fuentes del dispositivo disponibles.`); }
-    } catch { setFontStatus("No se dio permiso para leer las fuentes del dispositivo."); }
+    try { const local=await w.queryLocalFonts(); const names=[...new Set(local.map(f=>f.family).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); if(names.length){ setFonts(names); setFontStatus(`${names.length} fuentes del dispositivo disponibles.`); } }
+    catch { setFontStatus("No se dio permiso para leer las fuentes del dispositivo."); }
   };
 
   const addImage=(file?:File)=>{ if(!file)return; const r=new FileReader(); r.onload=()=>{ focus(); document.execCommand("insertHTML",false,`<img src="${r.result}" alt="Imagen" draggable="true" style="display:block;max-width:90%;height:auto;margin:12px auto;border-radius:14px;box-shadow:0 4px 14px rgba(47,43,41,.10);" />`); rememberSelection(); saveBox(active); }; r.readAsDataURL(file); };
@@ -95,10 +127,13 @@ function NotasPage() {
   const cutBox=()=>{ const el=refs.current[active]; if(!el)return; setCopiedHtml(el.innerHTML); el.innerHTML=""; saveBox(active); };
   const pasteBox=()=>{ const el=refs.current[active]; if(!el||!copiedHtml)return; el.insertAdjacentHTML("beforeend",copiedHtml); saveBox(active); };
   const clearBox=()=>{ const el=refs.current[active]; if(!el)return; el.innerHTML=""; saveBox(active); };
+  const restoreDrawing=(data?:string)=>{ const canvas=canvasRefs.current[active]; const ctx=canvas?.getContext("2d"); if(!canvas||!ctx)return; ctx.clearRect(0,0,canvas.width,canvas.height); if(!data){ localStorage.removeItem(drawKey(active)); return; } const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,canvas.width,canvas.height); img.src=data; localStorage.setItem(drawKey(active),data); };
+  const undoDraw=()=>{ const h=drawHistory.current[active]; if(!h.length)return; const current=h.pop(); if(current) drawFuture.current[active].push(current); restoreDrawing(h[h.length-1]); };
+  const redoDraw=()=>{ const f=drawFuture.current[active]; const next=f.pop(); if(!next)return; drawHistory.current[active].push(next); restoreDrawing(next); };
+  const clearDrawing=()=>{ const canvas=canvasRefs.current[active]; const ctx=canvas?.getContext("2d"); if(canvas&&ctx){ ctx.clearRect(0,0,canvas.width,canvas.height); localStorage.removeItem(drawKey(active)); drawHistory.current[active]=[]; drawFuture.current[active]=[]; } };
+  const handwritingToText=()=>{ setPanel(null); setEraser(false); refs.current[active]?.focus(); };
 
-  const visibleStickers = stickerSearch.trim()
-    ? Object.values(STICKERS).flat().filter((s,i,a)=>a.indexOf(s)===i)
-    : STICKERS[stickerGroup];
+  const visibleStickers = stickerSearch.trim() ? Object.values(STICKERS).flat().filter((s,i,a)=>a.indexOf(s)===i) : STICKERS[stickerGroup];
 
   return <PageShell title="Notas" subtitle="Tocá una hoja y empezá. Las herramientas aparecen cuando las necesitás.">
     <div className="sticky top-0 z-30 -mx-4 mb-4 border-y border-border bg-background/95 px-4 py-2 backdrop-blur">
@@ -113,6 +148,7 @@ function NotasPage() {
           <IconTool title="Imagen" onClick={()=>fileRef.current?.click()}><ImagePlus /></IconTool>
           <IconTool title="Stickers" active={panel==="stickers"} onClick={()=>setPanel(panel==="stickers"?null:"stickers")}><SmilePlus /></IconTool>
           <IconTool title="Color" active={panel==="colors"} onClick={()=>setPanel(panel==="colors"?null:"colors")}><Palette /></IconTool>
+          <IconTool title="Escribir a mano" active={panel==="pen"} onClick={()=>setPanel(panel==="pen"?null:"pen")}><Pencil /></IconTool>
           <IconTool title="Más" active={panel==="more"} onClick={()=>setPanel(panel==="more"?null:"more")}><MoreHorizontal /></IconTool>
         </div>
       </div>
@@ -130,17 +166,30 @@ function NotasPage() {
         <div className="mb-2 flex gap-2 overflow-x-auto pb-1">{(Object.keys(STICKERS) as StickerGroup[]).map(g=><button key={g} className={`shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold ${stickerGroup===g?"bg-[#F3DDD6] border-[#D9A596]":"bg-background"}`} onClick={()=>{setStickerGroup(g);setStickerSearch("");}}>{g}</button>)}</div>
         <label className="mb-2 flex h-10 items-center gap-2 rounded-xl border bg-background px-3"><Search className="h-4 w-4 text-muted-foreground"/><input className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar stickers" value={stickerSearch} onChange={e=>setStickerSearch(e.target.value)}/></label>
         <div className="max-h-48 overflow-y-auto"><div className="grid grid-cols-8 gap-2 sm:grid-cols-12">{visibleStickers.map((s,i)=><button key={`${s}-${i}`} className="grid h-10 w-10 place-items-center rounded-xl text-xl hover:bg-muted" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(s)}>{s}</button>)}</div></div>
-        <p className="mt-2 text-xs text-muted-foreground">Los stickers están agrupados para encontrarlos rápido. Después podemos sumar packs decorativos propios.</p>
       </div>}
 
       {panel==="colors" && <div className="mt-2 flex flex-wrap gap-3 rounded-2xl border bg-card p-3 shadow-sm">{COLORS.map(c=><button key={c} title={c} aria-label={`Color ${c}`} className="h-9 w-9 rounded-full border-2 border-white shadow ring-1 ring-border" style={{backgroundColor:c}} onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{command("foreColor",c);setPanel(null);}} />)}<button className="h-9 rounded-xl border px-3 text-sm" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{command("removeFormat");setPanel(null);}}>Sin formato</button></div>}
+
+      {panel==="pen" && <div className="mt-2 rounded-2xl border bg-card p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <button className={`h-10 rounded-xl border px-3 text-sm font-semibold ${!eraser?"bg-[#F3DDD6] border-[#D9A596]":""}`} onClick={()=>setEraser(false)}><Pencil className="mr-1 inline h-4 w-4"/>Manuscrito</button>
+          <button className={`h-10 rounded-xl border px-3 text-sm font-semibold ${eraser?"bg-[#F3DDD6] border-[#D9A596]":""}`} onClick={()=>setEraser(true)}><Eraser className="mr-1 inline h-4 w-4"/>Goma</button>
+          <button className="grid h-10 w-10 place-items-center rounded-xl border" onClick={undoDraw} aria-label="Deshacer"><Undo2 className="h-4 w-4"/></button>
+          <button className="grid h-10 w-10 place-items-center rounded-xl border" onClick={redoDraw} aria-label="Rehacer"><Redo2 className="h-4 w-4"/></button>
+          <select className="h-10 rounded-xl border bg-background px-2 text-sm" value={penWidth} onChange={e=>setPenWidth(Number(e.target.value))}><option value={2}>Fino</option><option value={3}>Medio</option><option value={5}>Grueso</option></select>
+          <input type="color" value={penColor} onChange={e=>setPenColor(e.target.value)} className="h-10 w-12 rounded-xl border bg-card p-1" aria-label="Color del lápiz"/>
+          <button className="h-10 rounded-xl border px-3 text-sm" onClick={clearDrawing}>Borrar dibujo</button>
+        </div>
+        <button className="mt-2 w-full rounded-xl border border-[#D9A596] bg-[#F8ECE8] px-3 py-2 text-sm font-semibold" onClick={handwritingToText}>Escribir con lápiz y convertir a texto</button>
+        <p className="mt-2 text-xs text-muted-foreground">En tablet/celular, esta opción usa la escritura manuscrita del teclado o del sistema cuando está disponible. Manuscrito deja el trazo tal cual.</p>
+      </div>}
 
       {panel==="more" && <div className="mt-2 flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm"><TextTool onClick={cutBox}><Scissors/>Cortar caja</TextTool><TextTool onClick={copyBox}><Copy/>Copiar caja</TextTool><TextTool onClick={pasteBox}>Pegar</TextTool><TextTool danger onClick={clearBox}><Trash2/>Vaciar</TextTool></div>}
       <div className="mt-1 text-xs text-muted-foreground">Editando: <b>{BOXES.find(b=>b.id===active)?.title}</b></div>
     </div>
 
     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>addImage(e.target.files?.[0])}/>
-    <div className="space-y-4">{BOXES.map(box=><section key={box.id} onPointerDown={()=>setActive(box.id)} className={`overflow-hidden rounded-[1.4rem] border bg-card shadow-sm ${active===box.id?"ring-2 ring-[#D9A596]/35 border-[#D9A596]":"border-border"}`}><div className={`${box.tone} border-b border-border px-4 py-2 text-xs font-extrabold tracking-wide text-foreground`}>{box.title}</div><div ref={el=>{refs.current[box.id]=el;}} contentEditable suppressContentEditableWarning onFocus={()=>setActive(box.id)} onInput={()=>{rememberSelection();saveBox(box.id);}} onKeyUp={rememberSelection} onMouseUp={rememberSelection} className="min-h-36 px-4 py-4 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" data-placeholder={box.placeholder}/></section>)}</div>
+    <div className="space-y-4">{BOXES.map(box=><section key={box.id} onPointerDown={()=>setActive(box.id)} className={`relative overflow-hidden rounded-[1.4rem] border bg-card shadow-sm ${active===box.id?"ring-2 ring-[#D9A596]/35 border-[#D9A596]":"border-border"}`}><div className={`${box.tone} border-b border-border px-4 py-2 text-xs font-extrabold tracking-wide text-foreground`}>{box.title}</div><div ref={el=>{refs.current[box.id]=el;}} contentEditable={panel!=="pen" || active!==box.id} suppressContentEditableWarning onFocus={()=>setActive(box.id)} onInput={()=>{rememberSelection();saveBox(box.id);}} onKeyUp={rememberSelection} onMouseUp={rememberSelection} className="relative z-10 min-h-36 px-4 py-4 text-base leading-7 outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" data-placeholder={box.placeholder}/><canvas ref={el=>{canvasRefs.current[box.id]=el;}} width={1200} height={420} className={`absolute bottom-0 left-0 right-0 z-20 h-[calc(100%-33px)] w-full touch-none ${panel==="pen"&&active===box.id?"pointer-events-auto":"pointer-events-none"}`}/></section>)}</div>
   </PageShell>;
 }
 

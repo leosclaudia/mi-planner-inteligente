@@ -163,7 +163,6 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         const localHash = hashOf(local);
         const meta = metaRef.current;
         const sameUser = meta.userId === userId;
-        const pendingLocal = !sameUser || meta.hash !== localHash;
 
         // Primera vez en la nube: subimos lo que ya había en este navegador.
         if (!data) {
@@ -174,6 +173,31 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
         const remote = (data.data ?? {}) as Snapshot;
         const remoteAt = new Date(data.updated_at).getTime();
+
+        // Login nuevo en este dispositivo: manda la nube, pero no perdemos
+        // claves locales que todavía no existen en la nube.
+        if (!sameUser) {
+          const merged: Snapshot = { ...local, ...remote };
+          const mergedHash = hashOf(merged);
+          applySnapshot(merged);
+          metaRef.current = {
+            hash: mergedHash,
+            remoteUpdatedAt: data.updated_at,
+            localChangedAt: mergedHash === hashOf(remote) ? 0 : Date.now(),
+            userId,
+          };
+          writeMeta(metaRef.current);
+          if (mergedHash !== localHash) {
+            window.location.reload();
+            return;
+          }
+          busy.current = false;
+          if (mergedHash !== hashOf(remote)) await push(userId);
+          else setStatus("saved");
+          return;
+        }
+
+        const pendingLocal = meta.hash !== localHash;
         const localAt = pendingLocal ? meta.localChangedAt || Date.now() : 0;
 
         if (remoteAt >= localAt) {
@@ -203,6 +227,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
           await push(userId);
           return;
         }
+
       } catch {
         setStatus(navigator.onLine ? "error" : "offline");
       } finally {

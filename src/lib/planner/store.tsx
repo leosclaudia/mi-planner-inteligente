@@ -17,6 +17,22 @@ const EMPTY: PlannerState = {
   tasks: [],
 };
 
+function normalizeState(value: unknown): PlannerState {
+  if (!value || typeof value !== "object") return { ...EMPTY };
+  const raw = value as Partial<PlannerState>;
+  const settings = raw.settings && typeof raw.settings === "object" ? raw.settings : EMPTY.settings;
+  return {
+    settings: {
+      plannerName: typeof settings.plannerName === "string" ? settings.plannerName : EMPTY.settings.plannerName,
+      ownerName: typeof settings.ownerName === "string" ? settings.ownerName : EMPTY.settings.ownerName,
+      onboarded: Boolean(settings.onboarded),
+    },
+    sections: Array.isArray(raw.sections) ? raw.sections : [],
+    projects: Array.isArray(raw.projects) ? raw.projects : [],
+    tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
+  };
+}
+
 interface Ctx {
   state: PlannerState;
   hydrated: boolean;
@@ -47,12 +63,9 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as PlannerState;
-        setState({ ...EMPTY, ...parsed });
-      }
+      if (raw) setState(normalizeState(JSON.parse(raw)));
     } catch {
-      /* ignore */
+      setState({ ...EMPTY });
     }
     setHydrated(true);
   }, []);
@@ -62,7 +75,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      /* ignore */
+      /* ignore storage quota/private mode errors */
     }
   }, [state, hydrated]);
 
@@ -74,7 +87,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       visibleSections: [...state.sections].filter((s) => !s.hidden).sort((a, b) => a.order - b.order),
       setSettings: (patch) => patchState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
       resetAll: () => setState({ ...EMPTY }),
-      replaceState: (next) => setState(next),
+      replaceState: (next) => setState(normalizeState(next)),
       addSection: (sec) => patchState((s) => ({ ...s, sections: [...s.sections, { ...sec, id: crypto.randomUUID(), order: s.sections.length }] })),
       updateSection: (id, patch) => patchState((s) => ({ ...s, sections: s.sections.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
       removeSection: (id) => patchState((s) => ({ ...s, sections: s.sections.filter((x) => x.id !== id), tasks: s.tasks.map((t) => (t.sectionId === id ? { ...t, sectionId: null } : t)), projects: s.projects.map((p) => p.sectionId === id ? { ...p, sectionId: null } : p) })),

@@ -1,0 +1,20 @@
+import { useEffect,useState } from "react";
+import { ArrowDown,ArrowUp,CalendarDays,GripVertical,Plus,Printer,Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/language";
+
+type Note={id:string;title:string;date:string;html:string;order:number};
+const KEY="planner-flex-notes-v1";
+const read=():Note[]=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}};
+
+export function FlexibleNotes(){
+ const {lang}=useLanguage(); const [notes,setNotes]=useState<Note[]>([]); const [drag,setDrag]=useState<string|null>(null);
+ useEffect(()=>setNotes(read()),[]); const save=(next:Note[])=>{setNotes(next);localStorage.setItem(KEY,JSON.stringify(next))};
+ const add=()=>save([...notes,{id:crypto.randomUUID(),title:lang==="en"?"New note":"Nueva nota",date:new Date().toISOString().slice(0,10),html:"",order:notes.length}]);
+ const patch=(id:string,p:Partial<Note>)=>save(notes.map(n=>n.id===id?{...n,...p}:n));
+ const remove=(id:string)=>save(notes.filter(n=>n.id!==id));
+ const move=(id:string,d:-1|1)=>{const a=[...notes].sort((x,y)=>x.order-y.order),i=a.findIndex(n=>n.id===id),j=i+d;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j]!,a[i]!];save(a.map((n,k)=>({...n,order:k})))};
+ const drop=(target:string)=>{if(!drag||drag===target)return;const a=[...notes].sort((x,y)=>x.order-y.order),from=a.findIndex(n=>n.id===drag),to=a.findIndex(n=>n.id===target);const [item]=a.splice(from,1);if(item)a.splice(to,0,item);save(a.map((n,k)=>({...n,order:k})));setDrag(null)};
+ const print=(e:React.MouseEvent,id:string)=>{const card=(e.currentTarget as HTMLElement).closest("article");if(!card)return;document.body.dataset.printMode="single-flex-note";card.setAttribute("data-print-selected","true");window.print();setTimeout(()=>{delete document.body.dataset.printMode;card.removeAttribute("data-print-selected")},500)};
+ return <section className="mt-8 border-t border-border pt-6"><div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-display text-xl font-bold">{lang==="en"?"My note cards":"Mis notas con fecha"}</h2><p className="text-sm text-muted-foreground">{lang==="en"?"Create, date and reorder independent notes.":"Creá notas independientes, poneles fecha y ordenalas como quieras."}</p></div><Button onClick={add}><Plus className="h-4 w-4"/>{lang==="en"?"New note":"Nueva nota"}</Button></div><div className="grid gap-3">{[...notes].sort((a,b)=>a.order-b.order).map(n=><article key={n.id} draggable onDragStart={()=>setDrag(n.id)} onDragOver={e=>e.preventDefault()} onDrop={()=>drop(n.id)} className="card-soft planner-flex-note overflow-hidden"><header className="flex flex-wrap items-center gap-2 bg-terra-soft/60 p-3"><GripVertical className="h-5 w-5 cursor-grab text-muted-foreground"/><input value={n.title} onChange={e=>patch(n.id,{title:e.target.value})} className="min-w-[140px] flex-1 bg-transparent font-bold outline-none"/><CalendarDays className="h-4 w-4 text-muted-foreground"/><input type="date" value={n.date} onChange={e=>patch(n.id,{date:e.target.value})} className="rounded-xl border border-border bg-card px-2 py-1 text-sm"/><div className="ml-auto flex gap-1 print:hidden"><Button size="icon" variant="ghost" onClick={()=>move(n.id,-1)} title={lang==="en"?"Move up":"Subir"}><ArrowUp className="h-4 w-4"/></Button><Button size="icon" variant="ghost" onClick={()=>move(n.id,1)} title={lang==="en"?"Move down":"Bajar"}><ArrowDown className="h-4 w-4"/></Button><Button size="icon" variant="ghost" onClick={e=>print(e,n.id)} title={lang==="en"?"Print only":"Imprimir solo"}><Printer className="h-4 w-4"/></Button><Button size="icon" variant="ghost" onClick={()=>remove(n.id)} title={lang==="en"?"Delete":"Eliminar"}><Trash2 className="h-4 w-4 text-destructive"/></Button></div></header><div contentEditable suppressContentEditableWarning onBlur={e=>patch(n.id,{html:e.currentTarget.innerHTML})} dangerouslySetInnerHTML={{__html:n.html}} className="min-h-36 p-4 outline-none" data-placeholder={lang==="en"?"Write here…":"Escribí acá…"}/></article>)}</div></section>;
+}

@@ -31,6 +31,7 @@ export interface Task {
   sectionId: SectionId | null;
   projectId: string | null;
   createdAt: string;
+  order?: number; // optional for backward compatibility with existing saved planners
 }
 
 export interface PlannerSettings {

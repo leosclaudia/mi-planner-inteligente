@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
@@ -101,6 +101,13 @@ function PersonalizarPage() {
                 {s.name}
               </span>
               <div className="flex shrink-0 items-center">
+                {s.contentType === "lista" && (
+                  <Button size="icon" variant="ghost" aria-label="Abrir lista" asChild>
+                    <Link to="/seccion/$id" params={{ id: s.id }}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -222,11 +229,12 @@ function SectionDialog({
   open: boolean;
   section: Section | null;
   onOpenChange: (v: boolean) => void;
-  onSave: (data: { name: string; icon: string; color: string }) => void;
+  onSave: (data: { name: string; icon: string; color: string; contentType: "tareas" | "lista" }) => void;
 }) {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("star");
   const [color, setColor] = useState<string>("terra");
+  const [contentType, setContentType] = useState<"tareas" | "lista">("tareas");
   const [key, setKey] = useState("");
 
   const signature = `${open}-${section?.id ?? "new"}`;
@@ -235,6 +243,7 @@ function SectionDialog({
     setName(section?.name ?? "");
     setIcon(section?.icon ?? "star");
     setColor(section?.color ?? "terra");
+    setContentType(section?.contentType ?? "tareas");
   }
 
   return (
@@ -253,6 +262,36 @@ function SectionDialog({
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: Casa"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Tipo de sección</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setContentType("tareas")}
+                className={cn(
+                  "rounded-xl border border-border px-3 py-2 text-sm font-semibold",
+                  contentType === "tareas" && "border-primary bg-terra-soft text-terra",
+                )}
+              >
+                Tareas y proyectos
+              </button>
+              <button
+                type="button"
+                onClick={() => setContentType("lista")}
+                className={cn(
+                  "rounded-xl border border-border px-3 py-2 text-sm font-semibold",
+                  contentType === "lista" && "border-primary bg-terra-soft text-terra",
+                )}
+              >
+                Lista con casilleros
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {contentType === "lista"
+                ? "Se abre como una lista para tildar, tipo compras o pendientes."
+                : "Sirve para clasificar tareas y proyectos, como hasta ahora."}
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Color</Label>
@@ -301,7 +340,7 @@ function SectionDialog({
             className="h-12"
             disabled={!name.trim()}
             onClick={() => {
-              onSave({ name: name.trim(), icon, color });
+              onSave({ name: name.trim(), icon, color, contentType });
               onOpenChange(false);
             }}
           >

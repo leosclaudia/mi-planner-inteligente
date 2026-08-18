@@ -7,6 +7,7 @@ export interface Section {
   color: string; // token name: terra | olive | sun | plum | sky | rose
   hidden: boolean;
   order: number;
+  contentType?: "tareas" | "lista"; // "tareas" (o sin definir) = comportamiento clásico; "lista" = checklist propia
 }
 
 export interface Project {

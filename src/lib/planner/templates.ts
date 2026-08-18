@@ -31,13 +31,6 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     description: "Ideas, finanzas y crecimiento",
   },
   {
-    key: "huerta",
-    name: "Huerta",
-    icon: "sprout",
-    color: "olive",
-    description: "Siembra, riego y cosecha",
-  },
-  {
     key: "bienestar",
     name: "Bienestar",
     icon: "heart",
@@ -68,7 +61,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
 ];
 
 /** Configuración de ejemplo de la propietaria, separada del producto genérico. */
-export const OWNER_PRESET_KEYS = ["negocio", "huerta", "ventas", "contenido"];
+export const OWNER_PRESET_KEYS = ["negocio", "ventas", "contenido"];
 
 export function sectionFromTemplate(t: SectionTemplate, order: number): Section {
   return {

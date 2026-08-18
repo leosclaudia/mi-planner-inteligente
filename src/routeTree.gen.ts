@@ -11,12 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AsistenteRouteImport } from './routes/asistente'
+import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as CalendarioRouteImport } from './routes/calendario'
 import { Route as CuentaRouteImport } from './routes/cuenta'
+import { Route as ImprimirRouteImport } from './routes/imprimir'
 import { Route as MasRouteImport } from './routes/mas'
 import { Route as NotasRouteImport } from './routes/notas'
+import { Route as NotasFechaRouteImport } from './routes/notas-fecha'
 import { Route as PersonalizarRouteImport } from './routes/personalizar'
 import { Route as ProyectosRouteImport } from './routes/proyectos'
+import { Route as RespaldoRouteImport } from './routes/respaldo'
 import { Route as TareasRouteImport } from './routes/tareas'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +33,11 @@ const AsistenteRoute = AsistenteRouteImport.update({
   path: '/asistente',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalendarioRoute = CalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
@@ -37,6 +46,11 @@ const CalendarioRoute = CalendarioRouteImport.update({
 const CuentaRoute = CuentaRouteImport.update({
   id: '/cuenta',
   path: '/cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImprimirRoute = ImprimirRouteImport.update({
+  id: '/imprimir',
+  path: '/imprimir',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasRoute = MasRouteImport.update({
@@ -49,6 +63,11 @@ const NotasRoute = NotasRouteImport.update({
   path: '/notas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotasFechaRoute = NotasFechaRouteImport.update({
+  id: '/notas-fecha',
+  path: '/notas-fecha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PersonalizarRoute = PersonalizarRouteImport.update({
   id: '/personalizar',
   path: '/personalizar',
@@ -57,6 +76,11 @@ const PersonalizarRoute = PersonalizarRouteImport.update({
 const ProyectosRoute = ProyectosRouteImport.update({
   id: '/proyectos',
   path: '/proyectos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RespaldoRoute = RespaldoRouteImport.update({
+  id: '/respaldo',
+  path: '/respaldo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TareasRoute = TareasRouteImport.update({
@@ -68,35 +92,47 @@ const TareasRoute = TareasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
+  '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
   '/cuenta': typeof CuentaRoute
+  '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
   '/notas': typeof NotasRoute
+  '/notas-fecha': typeof NotasFechaRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
+  '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
+  '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
   '/cuenta': typeof CuentaRoute
+  '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
   '/notas': typeof NotasRoute
+  '/notas-fecha': typeof NotasFechaRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
+  '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
+  '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
   '/cuenta': typeof CuentaRoute
+  '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
   '/notas': typeof NotasRoute
+  '/notas-fecha': typeof NotasFechaRoute
   '/personalizar': typeof PersonalizarRoute
   '/proyectos': typeof ProyectosRoute
+  '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRouteTypes {
@@ -104,46 +140,62 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/asistente'
+    | '/buscar'
     | '/calendario'
     | '/cuenta'
+    | '/imprimir'
     | '/mas'
     | '/notas'
+    | '/notas-fecha'
     | '/personalizar'
     | '/proyectos'
+    | '/respaldo'
     | '/tareas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/asistente'
+    | '/buscar'
     | '/calendario'
     | '/cuenta'
+    | '/imprimir'
     | '/mas'
     | '/notas'
+    | '/notas-fecha'
     | '/personalizar'
     | '/proyectos'
+    | '/respaldo'
     | '/tareas'
   id:
     | '__root__'
     | '/'
     | '/asistente'
+    | '/buscar'
     | '/calendario'
     | '/cuenta'
+    | '/imprimir'
     | '/mas'
     | '/notas'
+    | '/notas-fecha'
     | '/personalizar'
     | '/proyectos'
+    | '/respaldo'
     | '/tareas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AsistenteRoute: typeof AsistenteRoute
+  BuscarRoute: typeof BuscarRoute
   CalendarioRoute: typeof CalendarioRoute
   CuentaRoute: typeof CuentaRoute
+  ImprimirRoute: typeof ImprimirRoute
   MasRoute: typeof MasRoute
   NotasRoute: typeof NotasRoute
+  NotasFechaRoute: typeof NotasFechaRoute
   PersonalizarRoute: typeof PersonalizarRoute
   ProyectosRoute: typeof ProyectosRoute
+  RespaldoRoute: typeof RespaldoRoute
   TareasRoute: typeof TareasRoute
 }
 
@@ -163,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AsistenteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/calendario': {
       id: '/calendario'
       path: '/calendario'
@@ -175,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/cuenta'
       fullPath: '/cuenta'
       preLoaderRoute: typeof CuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/imprimir': {
+      id: '/imprimir'
+      path: '/imprimir'
+      fullPath: '/imprimir'
+      preLoaderRoute: typeof ImprimirRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mas': {
@@ -191,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notas-fecha': {
+      id: '/notas-fecha'
+      path: '/notas-fecha'
+      fullPath: '/notas-fecha'
+      preLoaderRoute: typeof NotasFechaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/personalizar': {
       id: '/personalizar'
       path: '/personalizar'
@@ -203,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/proyectos'
       fullPath: '/proyectos'
       preLoaderRoute: typeof ProyectosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/respaldo': {
+      id: '/respaldo'
+      path: '/respaldo'
+      fullPath: '/respaldo'
+      preLoaderRoute: typeof RespaldoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tareas': {
@@ -218,12 +298,16 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AsistenteRoute: AsistenteRoute,
+  BuscarRoute: BuscarRoute,
   CalendarioRoute: CalendarioRoute,
   CuentaRoute: CuentaRoute,
+  ImprimirRoute: ImprimirRoute,
   MasRoute: MasRoute,
   NotasRoute: NotasRoute,
+  NotasFechaRoute: NotasFechaRoute,
   PersonalizarRoute: PersonalizarRoute,
   ProyectosRoute: ProyectosRoute,
+  RespaldoRoute: RespaldoRoute,
   TareasRoute: TareasRoute,
 }
 export const routeTree = rootRouteImport

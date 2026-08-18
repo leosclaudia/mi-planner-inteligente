@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, ListChecks, NotebookPen, Sparkles } from "lucide-react";
+import { CalendarDays, ListChecks, NotebookPen } from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { BottomNav } from "@/components/planner/BottomNav";
 import { usePlanner } from "@/lib/planner/store";
@@ -34,7 +34,7 @@ function InicioSimple() {
           <Link to="/notas" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-plum-soft text-plum"><NotebookPen className="h-6 w-6" /></span><div className="min-w-0"><h2 className="text-xl font-bold">{t("Notas")}</h2><p className="text-sm text-muted-foreground">{t("Escribí, pegá imágenes, stickers o dibujá")}</p></div></Link>
           <Link to="/tareas" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sun-soft text-sun"><ListChecks className="h-6 w-6" /></span><div className="min-w-0 flex-1"><h2 className="text-xl font-bold">{t("Tareas")}</h2><p className="text-sm text-muted-foreground">{pending ? (lang === "en" ? `${pending} pending` : `${pending} pendientes`) : t("Sin pendientes")}</p></div></Link>
         </section>
-        <section className="mt-5 rounded-[1.3rem] border border-border bg-card p-5"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-cielo-soft text-cielo"><Sparkles className="h-5 w-5" /></span><div><h2 className="text-lg font-bold">{t("Asistente")}</h2><p className="mt-1 text-sm text-muted-foreground">{t("Lo dejamos disponible, pero fuera del camino principal para que el planner siga simple.")}</p><Link to="/asistente" className="mt-2 inline-block text-sm font-bold text-foreground underline underline-offset-4">{t("Abrir asistente")}</Link></div></div></section>
+
       </main><BottomNav />
     </div>
   );

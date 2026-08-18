@@ -15,6 +15,7 @@ const splitHtml=(html:string)=>{const box=document.createElement("div");box.inne
 export function FlexibleNotes(){
  const {lang}=useLanguage(); const [notes,setNotes]=useState<Note[]>([]); const [drag,setDrag]=useState<string|null>(null); const fileRef=useRef<HTMLInputElement>(null); const uploadNote=useRef<string|null>(null); const selectionRef=useRef<Range|null>(null); const activeNoteRef=useRef<string|null>(null); const transformRef=useRef<{noteId:string;wrap:HTMLElement;root:HTMLElement;mode:"move"|"resize";corner:string;x:number;y:number;left:number;top:number;width:number;ratio:number}|null>(null);
  useEffect(()=>setNotes(read()),[]);
+ useEffect(()=>{document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{if(!w.querySelector(".flex-image-delete"))w.insertAdjacentHTML("afterbegin",flexDeleteHandle)})});
  const persist=(next:Note[])=>{setNotes(next);localStorage.setItem(KEY,JSON.stringify(next))};
  const patch=(id:string,p:Partial<Note>)=>setNotes(prev=>{const next=prev.map(n=>n.id===id?{...n,...p}:n);localStorage.setItem(KEY,JSON.stringify(next));return next});
  const saveDom=(id:string,root:HTMLElement)=>{const text=root.querySelector<HTMLElement>(".planner-flex-text")?.innerHTML||"";const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>x.outerHTML).join("");patch(id,{html:text+images})};

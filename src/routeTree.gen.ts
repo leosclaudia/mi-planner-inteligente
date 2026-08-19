@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AsistenteRouteImport } from './routes/asistente'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as ImprimirRouteImport } from './routes/imprimir'
 import { Route as MasRouteImport } from './routes/mas'
@@ -22,6 +23,7 @@ import { Route as PersonalizarRouteImport } from './routes/personalizar'
 import { Route as ProyectosRouteImport } from './routes/proyectos'
 import { Route as RespaldoRouteImport } from './routes/respaldo'
 import { Route as TareasRouteImport } from './routes/tareas'
+import { Route as SeccionIdRouteImport } from './routes/seccion.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +43,11 @@ const BuscarRoute = BuscarRouteImport.update({
 const CalendarioRoute = CalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComprasRoute = ComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CuentaRoute = CuentaRouteImport.update({
@@ -88,12 +95,18 @@ const TareasRoute = TareasRouteImport.update({
   path: '/tareas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SeccionIdRoute = SeccionIdRouteImport.update({
+  id: '/seccion/$id',
+  path: '/seccion/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
+  '/compras': typeof ComprasRoute
   '/cuenta': typeof CuentaRoute
   '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
@@ -103,12 +116,14 @@ export interface FileRoutesByFullPath {
   '/proyectos': typeof ProyectosRoute
   '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
+  '/seccion/$id': typeof SeccionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/asistente': typeof AsistenteRoute
   '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
+  '/compras': typeof ComprasRoute
   '/cuenta': typeof CuentaRoute
   '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
@@ -118,6 +133,7 @@ export interface FileRoutesByTo {
   '/proyectos': typeof ProyectosRoute
   '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
+  '/seccion/$id': typeof SeccionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,7 @@ export interface FileRoutesById {
   '/asistente': typeof AsistenteRoute
   '/buscar': typeof BuscarRoute
   '/calendario': typeof CalendarioRoute
+  '/compras': typeof ComprasRoute
   '/cuenta': typeof CuentaRoute
   '/imprimir': typeof ImprimirRoute
   '/mas': typeof MasRoute
@@ -134,6 +151,7 @@ export interface FileRoutesById {
   '/proyectos': typeof ProyectosRoute
   '/respaldo': typeof RespaldoRoute
   '/tareas': typeof TareasRoute
+  '/seccion/$id': typeof SeccionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +160,7 @@ export interface FileRouteTypes {
     | '/asistente'
     | '/buscar'
     | '/calendario'
+    | '/compras'
     | '/cuenta'
     | '/imprimir'
     | '/mas'
@@ -151,12 +170,14 @@ export interface FileRouteTypes {
     | '/proyectos'
     | '/respaldo'
     | '/tareas'
+    | '/seccion/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/asistente'
     | '/buscar'
     | '/calendario'
+    | '/compras'
     | '/cuenta'
     | '/imprimir'
     | '/mas'
@@ -166,12 +187,14 @@ export interface FileRouteTypes {
     | '/proyectos'
     | '/respaldo'
     | '/tareas'
+    | '/seccion/$id'
   id:
     | '__root__'
     | '/'
     | '/asistente'
     | '/buscar'
     | '/calendario'
+    | '/compras'
     | '/cuenta'
     | '/imprimir'
     | '/mas'
@@ -181,6 +204,7 @@ export interface FileRouteTypes {
     | '/proyectos'
     | '/respaldo'
     | '/tareas'
+    | '/seccion/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +212,7 @@ export interface RootRouteChildren {
   AsistenteRoute: typeof AsistenteRoute
   BuscarRoute: typeof BuscarRoute
   CalendarioRoute: typeof CalendarioRoute
+  ComprasRoute: typeof ComprasRoute
   CuentaRoute: typeof CuentaRoute
   ImprimirRoute: typeof ImprimirRoute
   MasRoute: typeof MasRoute
@@ -197,6 +222,7 @@ export interface RootRouteChildren {
   ProyectosRoute: typeof ProyectosRoute
   RespaldoRoute: typeof RespaldoRoute
   TareasRoute: typeof TareasRoute
+  SeccionIdRoute: typeof SeccionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -227,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/calendario'
       fullPath: '/calendario'
       preLoaderRoute: typeof CalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compras': {
+      id: '/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cuenta': {
@@ -292,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TareasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/seccion/$id': {
+      id: '/seccion/$id'
+      path: '/seccion/$id'
+      fullPath: '/seccion/$id'
+      preLoaderRoute: typeof SeccionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -300,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AsistenteRoute: AsistenteRoute,
   BuscarRoute: BuscarRoute,
   CalendarioRoute: CalendarioRoute,
+  ComprasRoute: ComprasRoute,
   CuentaRoute: CuentaRoute,
   ImprimirRoute: ImprimirRoute,
   MasRoute: MasRoute,
@@ -309,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProyectosRoute: ProyectosRoute,
   RespaldoRoute: RespaldoRoute,
   TareasRoute: TareasRoute,
+  SeccionIdRoute: SeccionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

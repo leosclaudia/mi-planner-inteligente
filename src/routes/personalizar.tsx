@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
@@ -51,12 +51,23 @@ function PersonalizarPage() {
     addSection,
     updateSection,
     removeSection,
-    moveSection,
   } = usePlanner();
   const [editing, setEditing] = useState<Section | null>(null);
   const [creating, setCreating] = useState(false);
+  const [dragOrder, setDragOrder] = useState<Section[] | null>(null);
+  const dragId = useRef<string | null>(null);
 
-  const ordered = [...state.sections].sort((a, b) => a.order - b.order);
+  const ordered = dragOrder ?? [...state.sections].sort((a, b) => a.order - b.order);
+
+  const startDrag = (id: string, e: React.PointerEvent) => { dragId.current = id; setDragOrder([...state.sections].sort((a, b) => a.order - b.order)); (e.target as HTMLElement).setPointerCapture?.(e.pointerId) };
+  const overDrag = (e: React.PointerEvent) => {
+    if (!dragId.current) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-section-id]");
+    const overId = el?.dataset.sectionId;
+    if (!overId || overId === dragId.current) return;
+    setDragOrder(prev => { if (!prev) return prev; const a = [...prev]; const from = a.findIndex(s => s.id === dragId.current), to = a.findIndex(s => s.id === overId); if (from < 0 || to < 0) return prev; const [it] = a.splice(from, 1); a.splice(to, 0, it!); return a });
+  };
+  const endDrag = () => { if (!dragId.current || !dragOrder) { dragId.current = null; return } dragOrder.forEach((s, i) => updateSection(s.id, { order: i })); dragId.current = null; setDragOrder(null) };
 
   return (
     <PageShell title="Personalizar" subtitle="Hacé que el planner sea tuyo">
@@ -88,9 +99,12 @@ function PersonalizarPage() {
             <Plus className="h-4 w-4" /> Nueva
           </Button>
         </div>
-        <ul className="mt-3 space-y-2">
-          {ordered.map((s, i) => (
-            <li key={s.id} className="card-soft flex items-center gap-3 p-3">
+        <ul className="mt-3 space-y-2" onPointerMove={overDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>
+          {ordered.map((s) => (
+            <li key={s.id} data-section-id={s.id} className="card-soft flex items-center gap-3 p-3">
+              <span onPointerDown={e => startDrag(s.id, e)} className="shrink-0 cursor-grab touch-none text-muted-foreground" aria-label="Arrastrar para reordenar">
+                <GripVertical className="h-5 w-5" />
+              </span>
               <SectionIconBox icon={s.icon} color={s.color} />
               <span
                 className={cn(
@@ -108,24 +122,6 @@ function PersonalizarPage() {
                     </Link>
                   </Button>
                 )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Subir"
-                  disabled={i === 0}
-                  onClick={() => moveSection(s.id, -1)}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Bajar"
-                  disabled={i === ordered.length - 1}
-                  onClick={() => moveSection(s.id, 1)}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
                 <Button
                   size="icon"
                   variant="ghost"

@@ -1,3 +1,155 @@
+
+
+mi-planner-inteligente-main (1).zip
+Archivo Zip
+te bajo un zip de github
+
+ab501960-765e-44a6-8b23-3166dd59e3fc.png
+56eda770-5ced-4f1e-af6d-6a3767a90f65.png
+Bien, mejoró. Bueno, acá le falta el fondo a la de hoy y a la de viento libre, no está el fondo agregado. Queda seleccionada raro, para poder, como que se va la selección cuando uno quiere cambiar el alto de la letra o cosas, no, no se nota. Es más, lo intenté con el dedo, pero me da un copiar pegar y nada, claro, mejor. cuando selecciono. por ahí después yo tengo la pantalla táctil de la PC. A las letras le podemos agregar una sombra.
+
+esto es lo que subo en add files
+
+ahi
+
+no esta el cambio de fondo 
+
+9b8ca6df-fd51-41e2-95c5-32297bc5b1f9.png
+Captura de pantalla 2026-08-20 015021.png
+fondo de la targeta cambiar mira que lido queda esto me encanto en la segunda te paso el fondo que falta en el resto de las tarjetas
+
+Imagen generada: Diseño de fondos personalizados para Planner
+
+
+Editar
+
+
+3dfc1e9f-897b-423d-b2ab-7a23b1f78240.png
+3315e796-afa7-42f0-a795-d2184e4c724b.png
+perdo no entendi como lo habias puesto mira este hay que hacer la seleccion de color como el resto
+
+Imagen generada: Selector unificado de fondos pastel
+
+
+Editar
+
+
+aaa739af-b9e9-420d-84b1-5e12e3eae651.png
+cfad3b1f-83d9-4db4-b107-6240538179f8.png
+aca si los pastele pero el selector no es redondo, y en notas igua no veo donde elegir mas pasteles
+
+Imagen generada: Selector pastel unificado para tu planner
+
+
+Editar
+
+
+
+notas (1).tsx
+TypeScript
+
+sigue igual que pasa
+
+todos los quiero redondos los selectores de color fijete que este no esta 
+
+Imagen generada: Selector pastel unificado para notas y agenda
+
+
+Editar
+
+
+y esto  que pones en la imagen anterior no esta asi solo dame el archivo 
+
+antes de subir archivo esto de fondo en cafda tarjeta te lo marque con una flecha azul no esta tampoco
+
+no los ubi dame el archivo solo , y se puede agrear el restablecer 
+
+9d54fbc4-9dbd-47e9-861a-d9acb865a16f.png
+928c2d44-999e-4780-9255-999b54c5b25b.png
+imagen 1 el panel es muy grande el de los colores resolver que se valla desplegando o dame una idea, imagen 2 no esta el tema del fondo individual en cada tarjeta
+
+y aca el tema del color sigue rectangular
+
+777d0cad-b948-4173-ae8d-acd837c0f608.png
+a0485bef-2d71-4f50-824c-343bdd88825b.png
+3e0f2f7a-8508-4396-ae31-f57e3fc06791.png
+no encuentro donde quitar el resaltado para seguir editando y el tema restablecer anda genial
+
+imagen 1 esto no lo cambiaste al selector color redondo igual al resto en dias de semana / agenda--- y ahora no puedo escribir nada en la genda algo se rompio al agregar el tema de fondo de color
+
+elSelector de progresíe rectangular. Cambiar.//Teníamos para agregar imágenes también en los días, o toda la parte de formato que tenemos en notas. Me parece que sí, pero se borró, no lo encuentro.
+
+listo sigue igua y no se retrar cuando cmbio de dia si no le ago click, ahora el resto como notas dale dame el archivo
+
+ahora lo tomo seguimos
+
+fba3ade4-7408-4979-9a79-17fb571f4d1a.png
+El selector de colores, podemos elegir el color, fíjate, y me queda seleccionada la imagen, no sé por qué. Me encantó la parte de selección de imagen, este formato. Está bueno para cambiar la parte de notas que quede así, pero bueno, vemos. Me encanta cómo selecciona y el eliminar que le pusiste está fantástico. Me gustó mucho más que lo de ayer. Bueno, y faltan otras cositas: el borde del color de la letra, vamos a poner ponemos todo, como está en notas. ¿Se puede?
+
+677617de-95e6-4ff2-8e88-d9b7ae01fcf9.png
+se colgo la vista previa revisas si mande todo el codigo bien
+
+5ead89be-2516-467e-90bd-4028fa23e83a.png
+f148a8c5-4741-469b-9ab0-85ca9ed65c29.png
+colr de borde sin selector ?? falta, el resto genial
+
+¡Sí! Ahora quedó muy bien. 🙌 Y las miniaturas en los días quedaron exactamente como buscábamos.
+
+Lo que falta en Color del borde es el selector de cualquier color. Ahora aparecen solamente los círculos predefinidos; después del negro debería aparecer el círculo multicolor, igual que en color de letra, para abrir el selector completo.
+
+Lo corrijo sin tocar nada de lo que ya funciona: miniaturas, movimiento/redimensión de imágenes, tareas, fondos y barra. Solo agregamos ese selector libre al Color del borde.
+
+Después de eso, Agenda ya queda lista para probarla completa y, si pasa la prueba, llevamos este sistema de imágenes a Notas.
+
+
+dc4f9a74-143e-40fc-8d13-a3317fd6fea0.png
+esto lo tendriamos que sacar y el texto podria ser la tarea o decime como podemos hacer???
+
+Sí, yo sacaría completamente esa tarjeta de “Sin tareas para este día”. Ahora que cada día tiene su propio lienzo, esa caja abajo queda redundante y ocupa espacio.
+
+Y haría algo mejor con las tareas: el texto libre del lienzo NO lo convertiría automáticamente en tarea, porque ahí podés escribir recuerdos, notas, títulos, pegar imágenes, etc. Conviene mantener las dos cosas diferenciadas.
+
+Mi propuesta sería que, dentro del día, quede así: arriba la barra de diseño, debajo el lienzo libre para texto + imágenes y, únicamente cuando haya tareas creadas para ese día, debajo aparezca una sección pequeña “Tareas del día” con sus casillas. Si no hay ninguna tarea, no aparece absolutamente nada abajo.
+
+Además, el botón + Tarea de arriba y + Agregar de los cuadraditos siguen creando tareas normalmente. Así tenemos Agenda completa sin mezclar una nota libre con algo que después aparece como pendiente.
+
+Y en la próxima corrección juntamos las dos cosas pendientes: sacar “Sin tareas para este día” + agregar el selector multicolor que falta en Color del borde. No tocaría nada más porque lo demás ya quedó muy lindo y funcionando.
+
+
+bien hacelo
+
+¡Listo! 🙌 Hice solo esas dos correcciones, sin tocar lo que ya quedó funcionando.
+
+⬇️ Descargar calendario.tsx corregido
+
+Reemplazá:
+
+src/routes/calendario.tsx
+
+Ahora:
+
+desaparece completamente “Sin tareas para este día” cuando no hay tareas;
+
+si existen tareas, aparece abajo “Tareas del día” y solamente las tareas reales;
+
+en Color del borde agregué al final el círculo multicolor para elegir cualquier color;
+
+no toqué imágenes, miniaturas, movimiento, redimensión, fondos ni el resto de la barra.
+
+Subilo a GitHub y decime listo; reviso el commit antes de seguir con Notas. 
+
+
+calendario_ajuste_tareas_borde.tsx
+Código
+
+
+Biblioteca
+/
+📱 Planner Inteligente Personalizable
+/
+calendario_ajuste_tareas_borde.tsx
+
+
 import { useEffect,useMemo,useRef,useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { addMonths,isSameDay,isSameMonth,isToday,subMonths } from "date-fns";
@@ -37,7 +189,7 @@ function CalendarioPage(){
    <Tabs value={view} onValueChange={v=>setView(v as View)}><TabsList className="grid w-full grid-cols-3"><TabsTrigger value="dia">{t("Día")}</TabsTrigger><TabsTrigger value="semana">{t("Semana")}</TabsTrigger><TabsTrigger value="mes">{t("Mes")}</TabsTrigger></TabsList></Tabs>
    <div className="mt-3 flex items-center justify-between gap-2"><Button size="icon" variant="outline" aria-label={t("Anterior")} onClick={()=>step(-1)}><ChevronLeft className="h-5 w-5"/></Button><p className="min-w-0 flex-1 truncate text-center font-semibold capitalize">{label}</p><Button size="icon" variant="outline" aria-label={t("Siguiente")} onClick={()=>step(1)}><ChevronRight className="h-5 w-5"/></Button></div>
    <div className="mt-2 text-center"><button className="text-sm font-semibold text-primary" onClick={()=>{setCursor(new Date());setView("dia")}}>{t("Ir a hoy")}</button></div>
-   {view==="dia"?<><DayCanvas dateKey={KEY(cursor)} tx={tx}/><DayList tasks={byDay[KEY(cursor)]??[]} onEdit={onEdit} emptyText={t("Sin tareas para este día.")}/></>:view==="semana"?<div className="mt-4"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{week.map(d=>{const list=byDay[KEY(d)]??[];return <CalendarWeekCard key={KEY(d)} d={d} list={list} dateFmt={dateFmt} tx={tx} setCursor={setCursor} setView={setView} openNewTask={openNewTask}/>})}</div><div className="mt-5"><h2 className="mb-2 font-display text-lg font-bold">{tx("Detalle de la semana","Week details")}</h2><div className="space-y-4">{week.map(d=><div key={KEY(d)}><button type="button" onClick={()=>{setCursor(d);setView("dia")}} className="flex w-full items-center gap-2 text-left"><h3 className={cn("text-sm font-bold capitalize",isToday(d)&&"text-primary")}>{dateFmt(d,{weekday:"long",day:"numeric"})}</h3><span className="text-xs text-muted-foreground">{(byDay[KEY(d)]??[]).length} {tx("tareas","tasks")}</span></button>{(byDay[KEY(d)]??[]).length>0?<DayList tasks={byDay[KEY(d)]??[]} onEdit={onEdit} compact emptyText=""/>:null}</div>)}</div></div></div>:<div className="mt-4"><div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground">{(lang==="en"?["M","T","W","T","F","S","S"]:["L","M","M","J","V","S","D"]).map((d,i)=><span key={i}>{d}</span>)}</div><div className="mt-1 grid grid-cols-7 gap-1">{monthGrid(cursor).map(d=>{const list=byDay[KEY(d)]??[],selected=isSameDay(d,cursor);return <CalendarMonthCard key={KEY(d)} d={d} list={list} selected={selected} cursor={cursor} setCursor={setCursor} setView={setView}/>})}</div></div>}
+   {view==="dia"?<><DayCanvas dateKey={KEY(cursor)} tx={tx}/>{(byDay[KEY(cursor)]??[]).length>0?<div className="mt-4"><h2 className="mb-2 text-sm font-bold">{tx("Tareas del día","Day tasks")}</h2><DayList tasks={byDay[KEY(cursor)]??[]} onEdit={onEdit} emptyText=""/></div>:null}</>:view==="semana"?<div className="mt-4"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{week.map(d=>{const list=byDay[KEY(d)]??[];return <CalendarWeekCard key={KEY(d)} d={d} list={list} dateFmt={dateFmt} tx={tx} setCursor={setCursor} setView={setView} openNewTask={openNewTask}/>})}</div><div className="mt-5"><h2 className="mb-2 font-display text-lg font-bold">{tx("Detalle de la semana","Week details")}</h2><div className="space-y-4">{week.map(d=><div key={KEY(d)}><button type="button" onClick={()=>{setCursor(d);setView("dia")}} className="flex w-full items-center gap-2 text-left"><h3 className={cn("text-sm font-bold capitalize",isToday(d)&&"text-primary")}>{dateFmt(d,{weekday:"long",day:"numeric"})}</h3><span className="text-xs text-muted-foreground">{(byDay[KEY(d)]??[]).length} {tx("tareas","tasks")}</span></button>{(byDay[KEY(d)]??[]).length>0?<DayList tasks={byDay[KEY(d)]??[]} onEdit={onEdit} compact emptyText=""/>:null}</div>)}</div></div></div>:<div className="mt-4"><div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground">{(lang==="en"?["M","T","W","T","F","S","S"]:["L","M","M","J","V","S","D"]).map((d,i)=><span key={i}>{d}</span>)}</div><div className="mt-1 grid grid-cols-7 gap-1">{monthGrid(cursor).map(d=>{const list=byDay[KEY(d)]??[],selected=isSameDay(d,cursor);return <CalendarMonthCard key={KEY(d)} d={d} list={list} selected={selected} cursor={cursor} setCursor={setCursor} setView={setView}/>})}</div></div>}
    <TaskDialog open={open} onOpenChange={setOpen} task={editing} defaultDate={editing?undefined:KEY(cursor)}/>
  </PageShell>
 }
@@ -127,7 +279,7 @@ function DayCanvas({dateKey,tx}:{dateKey:string;tx:(es:string,en:string)=>string
 
   {panel==="color"&&<div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">{DAY_COLORS.map(c=><button key={c} type="button" className="h-8 w-8 rounded-full border" style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("foreColor",c)}/>)}<label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}><input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={e=>cmd("foreColor",e.target.value)}/></label></div>}
   {panel==="highlight"&&<div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2"><button type="button" className="rounded-full border px-3 py-1.5 text-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("hiliteColor","transparent")}>🚫 {tx("Sin resaltado","No highlight")}</button>{DAY_HILITES.map(c=><button key={c} type="button" className="h-8 w-8 rounded-full border" style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("hiliteColor",c)}/>)}<label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}><input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={e=>cmd("hiliteColor",e.target.value)}/></label></div>}
-  {panel==="stroke"&&<div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2"><span className="text-xs font-semibold">{tx("Color del borde","Border color")}</span>{DAY_COLORS.map(c=><button key={c} type="button" className={`h-8 w-8 rounded-full border ${strokeColor.toUpperCase()===c.toUpperCase()?"ring-2 ring-primary ring-offset-1":""}`} style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>setStrokeColorCmd(c)}/>)}<label className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border" style={{background:strokeColor}}><input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" value={strokeColor} onChange={e=>setStrokeColorCmd(e.target.value)}/></label></div>}
+  {panel==="stroke"&&<div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2"><span className="text-xs font-semibold">{tx("Color del borde","Border color")}</span>{DAY_COLORS.map(c=><button key={c} type="button" className={`h-8 w-8 rounded-full border ${strokeColor.toUpperCase()===c.toUpperCase()?"ring-2 ring-primary ring-offset-1":""}`} style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>setStrokeColorCmd(c)}/>)}<label title={tx("Más colores","More colors")} className="relative h-8 w-8 cursor-pointer overflow-hidden rounded-full border shadow-sm" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}><input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" value={strokeColor} onChange={e=>setStrokeColorCmd(e.target.value)}/></label></div>}
 
   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>{addImage(e.target.files?.[0]);e.currentTarget.value=""}}/>
   <div className="relative mt-3 min-h-[320px] overflow-hidden rounded-xl border border-dashed border-border bg-background/60">

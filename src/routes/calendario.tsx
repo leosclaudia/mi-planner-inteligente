@@ -1,7 +1,7 @@
 import { useEffect,useMemo,useRef,useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { addMonths,isSameDay,isSameMonth,isToday,subMonths } from "date-fns";
-import { ChevronLeft,ChevronRight,ImagePlus,Plus,Trash2 } from "lucide-react";
+import { AlignCenter,AlignJustify,AlignLeft,AlignRight,Bold,ChevronLeft,ChevronRight,Highlighter,ImagePlus,Italic,Palette,Plus,Trash2,Underline } from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
 import { TaskItem } from "@/components/planner/TaskItem";
@@ -43,35 +43,63 @@ function CalendarioPage(){
 }
 
 type DayImage={id:string;src:string;x:number;y:number;w:number};
+const DAY_FONTS=["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Century Gothic","Cambria","Candara"];
+const DAY_SIZES=[10,13,16,18,24,32,48];
+const DAY_COLORS=["#111111","#A84F4F","#D26A4C","#C48A2F","#66508D","#4F6E98","#B34F83","#4E7C72","#2F6F5F","#31708E"];
+const DAY_HILITES=["#FFF3A3","#FFD9A0","#FFB3C1","#C9F2C7","#B8E3FF","#E3D1FF"];
 
 function DayCanvas({dateKey,tx}:{dateKey:string;tx:(es:string,en:string)=>string}){
- const fileRef=useRef<HTMLInputElement>(null);
- const areaRef=useRef<HTMLDivElement>(null);
- const [images,setImages]=useState<DayImage[]>([]);
- const [selected,setSelected]=useState<string|null>(null);
+ const fileRef=useRef<HTMLInputElement>(null),areaRef=useRef<HTMLDivElement>(null),editorRef=useRef<HTMLDivElement>(null),selectionRef=useRef<Range|null>(null);
+ const [images,setImages]=useState<DayImage[]>([]),[selected,setSelected]=useState<string|null>(null),[font,setFont]=useState("Arial"),[size,setSize]=useState(16),[panel,setPanel]=useState<"color"|"highlight"|null>(null);
  const dragRef=useRef<{id:string;mode:"move"|"resize";sx:number;sy:number;x:number;y:number;w:number}|null>(null);
- const key=`planner-calendar-images:${dateKey}`;
+ const imageKey=`planner-calendar-images:${dateKey}`,textKey=`planner-calendar-richtext:${dateKey}`;
 
- useEffect(()=>{try{setImages(JSON.parse(localStorage.getItem(key)||"[]"))}catch{setImages([])}setSelected(null)},[key]);
- const persist=(next:DayImage[])=>{setImages(next);localStorage.setItem(key,JSON.stringify(next))};
- const addImage=(file?:File)=>{if(!file)return;const reader=new FileReader();reader.onload=()=>{const next=[...images,{id:crypto.randomUUID(),src:String(reader.result),x:20,y:20,w:180}];persist(next);setSelected(next[next.length-1]!.id)};reader.readAsDataURL(file)};
- const start=(e:React.PointerEvent,id:string,mode:"move"|"resize")=>{e.preventDefault();e.stopPropagation();const item=images.find(i=>i.id===id);if(!item)return;setSelected(id);dragRef.current={id,mode,sx:e.clientX,sy:e.clientY,x:item.x,y:item.y,w:item.w};(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)};
- const move=(e:React.PointerEvent)=>{const d=dragRef.current;if(!d)return;e.preventDefault();const dx=e.clientX-d.sx,dy=e.clientY-d.sy;const area=areaRef.current?.getBoundingClientRect();setImages(prev=>prev.map(i=>{if(i.id!==d.id)return i;if(d.mode==="resize")return {...i,w:Math.max(80,Math.min((area?.width??600)-20,d.w+dx))};const maxX=Math.max(0,(area?.width??600)-i.w-8);return {...i,x:Math.max(0,Math.min(maxX,d.x+dx)),y:Math.max(0,d.y+dy)}}))};
- const end=()=>{if(dragRef.current){setImages(prev=>{localStorage.setItem(key,JSON.stringify(prev));return prev});dragRef.current=null}};
+ useEffect(()=>{try{setImages(JSON.parse(localStorage.getItem(imageKey)||"[]"))}catch{setImages([])}setSelected(null);setPanel(null);setTimeout(()=>{if(editorRef.current)editorRef.current.innerHTML=localStorage.getItem(textKey)||""},0)},[imageKey,textKey]);
+ const saveText=()=>{if(editorRef.current)localStorage.setItem(textKey,editorRef.current.innerHTML)};
+ const remember=()=>{const s=window.getSelection();if(s&&s.rangeCount&&editorRef.current?.contains(s.getRangeAt(0).startContainer)&&editorRef.current.contains(s.getRangeAt(0).endContainer))selectionRef.current=s.getRangeAt(0).cloneRange()};
+ const focusSelection=()=>{editorRef.current?.focus({preventScroll:true});const s=window.getSelection(),r=selectionRef.current;if(s&&r){s.removeAllRanges();s.addRange(r)}};
+ const cmd=(c:string,v?:string)=>{focusSelection();document.execCommand(c,false,v);remember();saveText()};
+ const setFontCmd=(v:string)=>{setFont(v);cmd("fontName",v)};
+ const setSizeCmd=(n:number)=>{setSize(n);focusSelection();document.execCommand("fontSize",false,"7");const root=editorRef.current;root?.querySelectorAll('font[size="7"]').forEach(el=>{(el as HTMLElement).removeAttribute("size");(el as HTMLElement).style.fontSize=`${n}px`});remember();saveText()};
+ const reset=()=>{focusSelection();document.execCommand("removeFormat");document.execCommand("justifyLeft");setFont("Arial");setSize(16);remember();saveText()};
+ const persist=(next:DayImage[])=>{setImages(next);localStorage.setItem(imageKey,JSON.stringify(next))};
+ const addImage=(file?:File)=>{if(!file)return;const r=new FileReader();r.onload=()=>{const next=[...images,{id:crypto.randomUUID(),src:String(r.result),x:20,y:20,w:180}];persist(next);setSelected(next.at(-1)!.id)};r.readAsDataURL(file)};
+ const start=(e:React.PointerEvent,id:string,mode:"move"|"resize")=>{e.preventDefault();e.stopPropagation();const i=images.find(x=>x.id===id);if(!i)return;setSelected(id);dragRef.current={id,mode,sx:e.clientX,sy:e.clientY,x:i.x,y:i.y,w:i.w};(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)};
+ const move=(e:React.PointerEvent)=>{const d=dragRef.current;if(!d)return;e.preventDefault();const dx=e.clientX-d.sx,dy=e.clientY-d.sy,a=areaRef.current?.getBoundingClientRect();setImages(prev=>prev.map(i=>i.id!==d.id?i:d.mode==="resize"?{...i,w:Math.max(80,Math.min((a?.width??600)-20,d.w+dx))}:{...i,x:Math.max(0,Math.min(Math.max(0,(a?.width??600)-i.w-8),d.x+dx)),y:Math.max(0,d.y+dy)}))};
+ const end=()=>{if(dragRef.current){setImages(prev=>{localStorage.setItem(imageKey,JSON.stringify(prev));return prev});dragRef.current=null}};
  const remove=(id:string)=>{persist(images.filter(i=>i.id!==id));setSelected(null)};
+ const tool="grid h-10 w-10 shrink-0 place-items-center rounded-xl border bg-card shadow-sm";
  return <div className="mt-4 rounded-2xl border border-border bg-card p-3 shadow-sm">
-   <div className="mb-2 flex items-center justify-between gap-2">
-     <div><div className="text-sm font-bold">{tx("Espacio del día","Day space")}</div><div className="text-[11px] text-muted-foreground">{tx("Agregá imágenes, movelas y cambiales el tamaño.","Add images, move and resize them.")}</div></div>
-     <button type="button" onClick={()=>fileRef.current?.click()} className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold shadow-sm"><ImagePlus className="h-4 w-4"/>{tx("Imagen","Image")}</button>
+  <div className="mb-2"><div className="text-sm font-bold">{tx("Espacio del día","Day space")}</div><div className="text-[11px] text-muted-foreground">{tx("Texto con formato e imágenes libres.","Formatted text and free images.")}</div></div>
+  <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border bg-background/70 p-2" onMouseDown={e=>{if((e.target as HTMLElement).closest("button,label,select"))remember()}}>
+   <select value={font} onChange={e=>setFontCmd(e.target.value)} className="h-10 max-w-[125px] rounded-xl border bg-card px-2 text-sm">{DAY_FONTS.map(f=><option key={f}>{f}</option>)}</select>
+   <select value={size} onChange={e=>setSizeCmd(Number(e.target.value))} className="h-10 w-[70px] rounded-xl border bg-card px-2 text-sm">{DAY_SIZES.map(n=><option key={n} value={n}>{n}</option>)}</select>
+   <button type="button" className={tool} title="Negrita" onClick={()=>cmd("bold")}><Bold className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Cursiva" onClick={()=>cmd("italic")}><Italic className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Subrayado" onClick={()=>cmd("underline")}><Underline className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Izquierda" onClick={()=>cmd("justifyLeft")}><AlignLeft className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Centrar" onClick={()=>cmd("justifyCenter")}><AlignCenter className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Derecha" onClick={()=>cmd("justifyRight")}><AlignRight className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Justificar" onClick={()=>cmd("justifyFull")}><AlignJustify className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Color" onClick={()=>setPanel(panel==="color"?null:"color")}><Palette className="h-4 w-4"/></button>
+   <button type="button" className={tool} title="Resaltador" onClick={()=>setPanel(panel==="highlight"?null:"highlight")}><Highlighter className="h-4 w-4"/></button>
+   <button type="button" className="inline-flex h-10 items-center gap-1.5 rounded-xl border bg-card px-3 text-xs shadow-sm" onClick={()=>fileRef.current?.click()}><ImagePlus className="h-4 w-4"/>{tx("Imagen","Image")}</button>
+   <button type="button" className="h-10 rounded-xl border bg-card px-3 text-xs shadow-sm" onClick={reset}>{tx("Restablecer","Reset")}</button>
+   <button type="button" className={tool} title="Deshacer" onClick={()=>cmd("undo")}>↶</button>
+   <button type="button" className={tool} title="Rehacer" onClick={()=>cmd("redo")}>↷</button>
+  </div>
+  {panel==="color"&&<div className="mt-2 flex flex-wrap gap-2 rounded-xl border bg-card p-2">{DAY_COLORS.map(c=><button key={c} type="button" className="h-8 w-8 rounded-full border" style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("foreColor",c)}/>)}</div>}
+  {panel==="highlight"&&<div className="mt-2 flex flex-wrap gap-2 rounded-xl border bg-card p-2"><button type="button" className="rounded-full border px-3 py-1.5 text-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("hiliteColor","transparent")}>🚫 {tx("Sin resaltado","No highlight")}</button>{DAY_HILITES.map(c=><button key={c} type="button" className="h-8 w-8 rounded-full border" style={{backgroundColor:c}} onMouseDown={e=>e.preventDefault()} onClick={()=>cmd("hiliteColor",c)}/>)}</div>}
+  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>{addImage(e.target.files?.[0]);e.currentTarget.value=""}}/>
+  <div className="relative mt-3 min-h-[320px] overflow-hidden rounded-xl border border-dashed border-border bg-background/60">
+   <div ref={editorRef} contentEditable suppressContentEditableWarning onInput={()=>{remember();saveText()}} onKeyUp={remember} onMouseUp={remember} onTouchEnd={remember} onFocus={remember} data-placeholder={tx("Tocá acá y escribí...","Tap here and write...")} className="relative z-[5] min-h-[320px] whitespace-pre-wrap break-words p-4 outline-none empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]"/>
+   <div ref={areaRef} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onPointerDown={()=>setSelected(null)} className="pointer-events-none absolute inset-0 z-10">
+    {images.map(img=><div key={img.id} onPointerDown={e=>start(e,img.id,"move")} className={`pointer-events-auto absolute touch-none select-none ${selected===img.id?"z-20":"z-10"}`} style={{left:img.x,top:img.y,width:img.w}}>
+     <img src={img.src} alt="" draggable={false} className={`block w-full rounded-xl object-contain shadow-sm ${selected===img.id?"outline outline-2 outline-primary outline-offset-2":""}`}/>
+     {selected===img.id&&<><button type="button" onPointerDown={e=>{e.preventDefault();e.stopPropagation();remove(img.id)}} className="absolute -right-3 -top-3 grid h-7 w-7 place-items-center rounded-full border bg-background shadow"><Trash2 className="h-3.5 w-3.5 text-destructive"/></button><span onPointerDown={e=>start(e,img.id,"resize")} className="absolute -bottom-2 -right-2 h-5 w-5 cursor-nwse-resize rounded-full border-2 border-white bg-primary shadow"/></>}
+    </div>)}
    </div>
-   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>{addImage(e.target.files?.[0]);e.currentTarget.value=""}}/>
-   <div ref={areaRef} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onPointerDown={()=>setSelected(null)} className="relative min-h-[260px] overflow-hidden rounded-xl border border-dashed border-border bg-background/60">
-     {images.length===0&&<div className="absolute inset-0 grid place-items-center px-4 text-center text-xs text-muted-foreground">{tx("Este espacio está libre. Tocá Imagen para agregar una foto.","This space is empty. Tap Image to add a photo.")}</div>}
-     {images.map(img=><div key={img.id} onPointerDown={e=>start(e,img.id,"move")} className={`absolute touch-none select-none ${selected===img.id?"z-20":"z-10"}`} style={{left:img.x,top:img.y,width:img.w}}>
-       <img src={img.src} alt="" draggable={false} className={`block w-full rounded-xl object-contain shadow-sm ${selected===img.id?"outline outline-2 outline-primary outline-offset-2":""}`}/>
-       {selected===img.id&&<><button type="button" title={tx("Eliminar imagen","Delete image")} onPointerDown={e=>{e.preventDefault();e.stopPropagation();remove(img.id)}} className="absolute -right-3 -top-3 grid h-7 w-7 place-items-center rounded-full border bg-background shadow"><Trash2 className="h-3.5 w-3.5 text-destructive"/></button><span onPointerDown={e=>start(e,img.id,"resize")} className="absolute -bottom-2 -right-2 h-5 w-5 cursor-nwse-resize rounded-full border-2 border-white bg-primary shadow"/></>}
-     </div>)}
-   </div>
+  </div>
  </div>;
 }
 

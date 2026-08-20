@@ -6,6 +6,7 @@ import { PageShell } from "@/components/planner/PageShell";
 import { Button } from "@/components/ui/button";
 import { usePlanner } from "@/lib/planner/store";
 import { useLanguage } from "@/lib/language";
+import { CardBackgroundPicker, useCardBackground } from "@/components/planner/CardBackgroundPicker";
 
 export const Route = createFileRoute("/seccion/$id")({ head: () => ({ meta: [{ title: "Sección | Planner Inteligente" }] }), component: () => <AppGate><SeccionListaPage /></AppGate> });
 
@@ -46,16 +47,13 @@ function SeccionListaPage() {
       <Button size="icon" onClick={add} aria-label={tx("Agregar", "Add")}><Plus className="h-4 w-4" /></Button>
     </div>
     {items.length === 0 ? <p className="card-soft mt-4 p-4 text-sm text-muted-foreground">{tx("Esta lista está vacía.", "This list is empty.")}</p> : <ul className="mt-4 space-y-2">
-      {items.map((item, i) => <li key={item.id} className="card-soft flex items-center gap-2 p-3">
-        <button type="button" onClick={() => toggle(item.id)} aria-label={tx("Tildar", "Check")} className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 ${item.done ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{item.done ? "✓" : ""}</button>
-        <input value={item.text} onChange={e => setItemText(item.id, e.target.value)} className={`min-w-0 flex-1 bg-transparent outline-none ${item.done ? "text-muted-foreground line-through" : ""}`} />
-        <div className="flex shrink-0 gap-0.5">
-          <Button size="icon" variant="ghost" aria-label={tx("Subir", "Move up")} onClick={() => move(item.id, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" aria-label={tx("Bajar", "Move down")} onClick={() => move(item.id, 1)} disabled={i === items.length - 1}><ArrowDown className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" aria-label={tx("Eliminar", "Delete")} onClick={() => remove(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-        </div>
-      </li>)}
+      {items.map((item, i) => <SectionListItem key={item.id} sectionId={section.id} item={item} i={i} itemsLength={items.length} tx={tx} toggle={toggle} setItemText={setItemText} move={move} remove={remove}/>)}
     </ul>}
     {doneCount > 0 && <Button variant="outline" className="mt-4 h-12 w-full" onClick={clearDone}><Trash2 className="h-4 w-4" /> {tx(`Borrar los ${doneCount} tildados`, `Clear ${doneCount} checked`)}</Button>}
   </PageShell>;
+}
+
+function SectionListItem({sectionId,item,i,itemsLength,tx,toggle,setItemText,move,remove}:any){
+ const [bg]=useCardBackground(`section:${sectionId}:item:${item.id}`);
+ return <li style={{backgroundColor:bg}} className="card-soft relative flex items-center gap-2 p-3 pr-12"><CardBackgroundPicker storageKey={`section:${sectionId}:item:${item.id}`} className="absolute right-2 top-2"/><button type="button" onClick={()=>toggle(item.id)} className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 ${item.done?"border-primary bg-primary text-primary-foreground":"border-border"}`}>{item.done?"✓":""}</button><input value={item.text} onChange={e=>setItemText(item.id,e.target.value)} className={`min-w-0 flex-1 bg-transparent outline-none ${item.done?"text-muted-foreground line-through":""}`}/><div className="flex shrink-0 gap-0.5"><Button size="icon" variant="ghost" onClick={()=>move(item.id,-1)} disabled={i===0}><ArrowUp className="h-4 w-4"/></Button><Button size="icon" variant="ghost" onClick={()=>move(item.id,1)} disabled={i===itemsLength-1}><ArrowDown className="h-4 w-4"/></Button><Button size="icon" variant="ghost" onClick={()=>remove(item.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div></li>
 }

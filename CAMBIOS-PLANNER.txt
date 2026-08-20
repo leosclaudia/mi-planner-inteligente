@@ -1,0 +1,14 @@
+PAQUETE DE CAMBIOS - PLANNER INTELIGENTE
+
+Incluye:
+- Notas: barra tipo Word, selección reforzada, sombra 0-5, borde 0-5 y color de borde.
+- HOY y LIENZO LIBRE: fondo independiente con paleta y Más colores, persistente.
+- Notas con fecha: fondo independiente persistente.
+- Tareas: fondo individual persistente.
+- Proyectos: fondo individual persistente.
+- Listas de secciones personalizadas: fondo individual persistente.
+- Agenda semanal: fondo individual por día persistente.
+- Agenda mensual: fondo individual por fecha persistente.
+
+Los fondos se guardan en localStorage del planner.
+No se modificó intencionalmente la lógica de movimiento/redimensionado de imágenes.

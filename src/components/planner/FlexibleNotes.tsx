@@ -39,6 +39,40 @@ const read=():Note[]=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}ca
 const flexDeleteHandle=`<button type="button" class="flex-image-delete" contenteditable="false" data-action="delete" aria-label="Eliminar imagen" title="Eliminar imagen"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6l-1 14c-.1 1.1-1 2-2.1 2H8.1C7 22 6.1 21.1 6 20L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>`;
 const flexResizeHandle=`<span class="flex-resize-handle" contenteditable="false" data-resize="se" aria-label="Cambiar tamaño"></span>`;
 const imageHtml=(src:string)=>`<span class="planner-flex-free-image" contenteditable="false" data-selected="false" style="position:absolute;left:16px;top:52px;width:180px;display:block;z-index:20;touch-action:none;user-select:none;"><img src="${src}" alt="Imagen" draggable="false" style="display:block;width:100%;height:auto;border-radius:10px;pointer-events:auto;"/>${flexDeleteHandle}${flexResizeHandle}</span>`;
+const normalizeLegacyTextHtml=(html:string)=>{
+ const box=document.createElement("div");box.innerHTML=html;
+ // Quitar spans puramente estructurales: sin estilo, clase, data ni atributos.
+ // Esto conserva exactamente los spans que sí contienen formato visual.
+ let changed=true;
+ while(changed){
+  changed=false;
+  Array.from(box.querySelectorAll("span")).forEach(span=>{
+   if(span.attributes.length===0){
+    span.replaceWith(...Array.from(span.childNodes));
+    changed=true;
+   }
+  });
+ }
+ // Unir spans hermanos consecutivos SOLO cuando sus atributos son idénticos.
+ const sameAttrs=(a:Element,b:Element)=>{
+  if(a.attributes.length!==b.attributes.length)return false;
+  return Array.from(a.attributes).every(x=>b.getAttribute(x.name)===x.value);
+ };
+ const walk=(parent:Element)=>{
+  let n=parent.firstElementChild;
+  while(n){
+   const next=n.nextElementSibling;
+   if(n.tagName==="SPAN"&&next?.tagName==="SPAN"&&sameAttrs(n,next)){
+    while(next.firstChild)n.appendChild(next.firstChild);
+    next.remove();continue;
+   }
+   walk(n);n=next;
+  }
+ };
+ walk(box);
+ box.normalize();
+ return box.innerHTML;
+};
 const trimLegacyTrailingSpace=(html:string)=>{
  const box=document.createElement("div");box.innerHTML=html;
  const isEmpty=(el:Element)=>{const clone=el.cloneNode(true) as HTMLElement;clone.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return (clone.textContent||"").replace(/\u200B|\u00A0/g,"").trim()===""&&!clone.querySelector("img,video,audio,canvas,svg,table,hr")};
@@ -47,7 +81,7 @@ const trimLegacyTrailingSpace=(html:string)=>{
  while(box.lastChild&&box.lastChild.nodeType===Node.TEXT_NODE&&!(box.lastChild.textContent||"").replace(/\u200B|\u00A0/g,"").trim())box.lastChild.remove();
  return box.innerHTML;
 };
-const splitHtml=(html:string)=>{const box=document.createElement("div");box.innerHTML=html;const images=Array.from(box.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{x.dataset.selected="false";return x.outerHTML}).join("");box.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return{text:trimLegacyTrailingSpace(box.innerHTML),images}};
+const splitHtml=(html:string)=>{const box=document.createElement("div");box.innerHTML=html;const images=Array.from(box.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{x.dataset.selected="false";return x.outerHTML}).join("");box.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return{text:normalizeLegacyTextHtml(trimLegacyTrailingSpace(box.innerHTML)),images}};
 function deselectAllImages(except?:HTMLElement){document.querySelectorAll<HTMLElement>(".planner-free-image, .planner-flex-free-image").forEach(w=>{if(w!==except)w.dataset.selected="false"})}
 function nodePath(root:Node,node:Node){const path:number[]=[];let cur:Node|null=node;while(cur&&cur!==root){const parent=cur.parentNode;if(!parent)return null;path.unshift(Array.prototype.indexOf.call(parent.childNodes,cur));cur=parent}return cur===root?path:null}
 function nodeFromPath(root:Node,path:number[]){let cur:Node=root;for(const i of path){const next=cur.childNodes[i];if(!next)return null;cur=next}return cur}

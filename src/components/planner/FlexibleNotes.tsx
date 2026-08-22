@@ -8,6 +8,31 @@ type FlexImageEvent=CustomEvent<{noteId:string;src:string;left?:number;top?:numb
 type FlexFormatEvent=CustomEvent<{command:string;value?:string}>;
 type SavedSelection={noteId:string;startPath:number[];startOffset:number;endPath:number[];endOffset:number};
 const KEY="planner-flex-notes-v1";
+const HIGHLIGHT_CLEANUP_KEY="planner-flex-highlight-cleanup-v1";
+const clearLegacyHighlightStyles=(html:string)=>{
+ const box=document.createElement("div");box.innerHTML=html;
+ box.querySelectorAll<HTMLElement>("span").forEach(span=>{
+  const hasHighlight=
+   !!span.dataset.plannerHighlight||
+   !!span.style.backgroundColor||
+   (!!span.style.background&&span.style.background!=="none");
+  if(!hasHighlight)return;
+  span.style.backgroundColor="";
+  span.style.background="";
+  span.style.removeProperty("box-decoration-break");
+  span.style.removeProperty("-webkit-box-decoration-break");
+  span.style.removeProperty("padding");
+  span.style.removeProperty("border-radius");
+  if(span.style.display==="inline-block")span.style.display="";
+  if(span.style.lineHeight==="1.15")span.style.lineHeight="";
+  if(span.style.verticalAlign==="baseline")span.style.verticalAlign="";
+  delete span.dataset.plannerHighlight;
+  if(!span.getAttribute("style")?.trim()&&!span.attributes.length){
+   span.replaceWith(...Array.from(span.childNodes));
+  }
+ });
+ return box.innerHTML;
+};
 const NOTE_BACKGROUNDS=["#FFFFFF","#FFF8E7","#FCE8EC","#F7E5DF","#EAF4E4","#E4F1F5","#EEE8F6","#F4E8DE"];
 const SIZE_PX:Record<string,string>={"1":"10px","2":"13px","3":"16px","4":"18px","5":"24px","6":"32px","7":"48px"};
 const read=():Note[]=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}};
@@ -133,7 +158,15 @@ function applyFlexHighlight(text:HTMLElement,color:string){
 function restoreSelectionSnapshot(text:HTMLElement,saved:SavedSelection){const start=nodeFromPath(text,saved.startPath),end=nodeFromPath(text,saved.endPath);if(!start||!end)return false;const r=document.createRange();try{r.setStart(start,Math.min(saved.startOffset,start.nodeType===Node.TEXT_NODE?(start.textContent?.length||0):start.childNodes.length));r.setEnd(end,Math.min(saved.endOffset,end.nodeType===Node.TEXT_NODE?(end.textContent?.length||0):end.childNodes.length))}catch{return false}const s=window.getSelection();if(!s)return false;s.removeAllRanges();s.addRange(r);return true}
 export function FlexibleNotes(){
  const {lang}=useLanguage(); const [notes,setNotes]=useState<Note[]>([]); const [drag,setDrag]=useState<string|null>(null); const [backgroundPicker,setBackgroundPicker]=useState<string|null>(null); const fileRef=useRef<HTMLInputElement>(null); const uploadNote=useRef<string|null>(null); const selectionRef=useRef<SavedSelection|null>(null); const activeNoteRef=useRef<string|null>(null); const transformRef=useRef<{noteId:string;wrap:HTMLElement;root:HTMLElement;mode:"move"|"resize";corner:string;x:number;y:number;left:number;top:number;width:number;ratio:number}|null>(null); const selectedImageKeyRef=useRef<{noteId:string;src:string}|null>(null); const selectedImageRef=useRef<HTMLElement|null>(null); const historyRef=useRef<Record<string,{undo:string[];redo:string[]}>>({});
- useEffect(()=>setNotes(read()),[]);
+ useEffect(()=>{
+ const loaded=read();
+ if(localStorage.getItem(HIGHLIGHT_CLEANUP_KEY)!=="done"){
+  const cleaned=loaded.map(n=>({...n,html:clearLegacyHighlightStyles(n.html||"")}));
+  localStorage.setItem(KEY,JSON.stringify(cleaned));
+  localStorage.setItem(HIGHLIGHT_CLEANUP_KEY,"done");
+  setNotes(cleaned);
+ }else setNotes(loaded);
+},[]);
  useEffect(()=>{document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle").forEach(h=>h.remove());w.querySelectorAll(".flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected=(selectedImageRef.current===w)?"true":"false"});requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>fitNoteHeight(root)))},[notes.map(n=>n.id).join("|")]);
  const persist=(next:Note[])=>{setNotes(next);localStorage.setItem(KEY,JSON.stringify(next))};
  const patch=(id:string,p:Partial<Note>)=>setNotes(prev=>{const next=prev.map(n=>n.id===id?{...n,...p}:n);localStorage.setItem(KEY,JSON.stringify(next));return next});

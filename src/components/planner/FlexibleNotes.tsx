@@ -69,51 +69,35 @@ function applyFlexHighlight(text:HTMLElement,color:string){
  const r=s.getRangeAt(0);if(r.collapsed||!text.contains(r.startContainer)||!text.contains(r.endContainer))return;
  const isClear=!color||color==="transparent";
 
- if(isClear){
-  try{
-   // Extraemos SOLO lo seleccionado, limpiamos el fondo en todos sus niveles
-   // y lo reinsertamos. Los demás estilos (fuente, tamaño, borde, cursiva, etc.) quedan.
-   const frag=r.extractContents();
-   const clean=(el:HTMLElement)=>{
-    el.style.removeProperty("background");
-    el.style.removeProperty("background-color");
-    el.removeAttribute("data-planner-highlight");
-    if(el.getAttribute("style")==="")el.removeAttribute("style");
-   };
-   Array.from(frag.querySelectorAll<HTMLElement>("*")).forEach(clean);
-
-   const wrapper=document.createElement("span");
-   wrapper.appendChild(frag);
-   clean(wrapper);
-   r.insertNode(wrapper);
-
-   // Quitar fondo heredado del propio wrapper/ancestros creados por resaltados viejos
-   let p=wrapper.parentElement;
-   while(p&&p!==text){
-    if(p.dataset.plannerHighlight==="1" || p.style.background || p.style.backgroundColor){
-     p.style.removeProperty("background");
-     p.style.removeProperty("background-color");
-     delete p.dataset.plannerHighlight;
-     if(p.getAttribute("style")==="")p.removeAttribute("style");
-    }
-    p=p.parentElement;
-   }
-
-   const nr=document.createRange();nr.selectNodeContents(wrapper);
-   s.removeAllRanges();s.addRange(nr);
-  }catch{}
-  return;
- }
-
  try{
-  const frag=r.extractContents();
-  const span=document.createElement("span");
-  span.dataset.plannerHighlight="1";
-  span.style.backgroundColor=color;
-  span.appendChild(frag);
-  r.insertNode(span);
-  const nr=document.createRange();nr.selectNodeContents(span);
-  s.removeAllRanges();s.addRange(nr);
+  // Usamos el motor nativo del contentEditable para que Chrome divida
+  // exactamente en los límites que el usuario seleccionó. No extraemos
+  // ni reinsertamos nodos: así no alteramos la selección ni el orden.
+  document.execCommand("styleWithCSS",false,"true");
+
+  if(isClear){
+   document.execCommand("hiliteColor",false,"transparent");
+   document.execCommand("backColor",false,"transparent");
+
+   // Normalizar SOLO los elementos completamente contenidos por la selección.
+   // Esto limpia restos históricos sin ampliar el rango elegido.
+   const selectedRange=s.rangeCount?s.getRangeAt(0):null;
+   if(selectedRange){
+    const all=Array.from(text.querySelectorAll<HTMLElement>("[data-planner-highlight],span[style],font[style]"));
+    all.forEach(el=>{
+     try{
+      if(selectedRange.intersectsNode(el) && selectedRange.toString().includes(el.textContent||"")){
+       el.style.removeProperty("background");
+       el.style.removeProperty("background-color");
+       el.removeAttribute("data-planner-highlight");
+       if(el.getAttribute("style")==="")el.removeAttribute("style");
+      }
+     }catch{}
+    });
+   }
+  }else{
+   document.execCommand("hiliteColor",false,color);
+  }
  }catch{}
 }
 function applyFlexFontSizePx(text:HTMLElement,value:string){

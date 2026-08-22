@@ -38,6 +38,98 @@ function applyFlexInlineStyle(text:HTMLElement,styles:Record<string,string>){
   span.appendChild(frag);r.insertNode(span);const nr=document.createRange();nr.selectNodeContents(span);s.removeAllRanges();s.addRange(nr)
  }catch{}
 }
+
+function applyFlexHighlight(text:HTMLElement,color:string){
+ const s=window.getSelection();if(!s||!s.rangeCount)return;
+ const r=s.getRangeAt(0);if(r.collapsed||!text.contains(r.startContainer)||!text.contains(r.endContainer))return;
+ try{
+  const selected=r.toString();
+  const startEl=r.startContainer.nodeType===Node.ELEMENT_NODE?r.startContainer as HTMLElement:r.startContainer.parentElement;
+  const endEl=r.endContainer.nodeType===Node.ELEMENT_NODE?r.endContainer as HTMLElement:r.endContainer.parentElement;
+
+  // Limpia resaltados antiguos de spans ancestros que corresponden exactamente
+  // a la selección actual. No toca borde, sombra, fuente, color ni otros estilos.
+  const clearAncestor=(el:HTMLElement|null)=>{
+   let cur=el?.closest<HTMLElement>("span")||null;
+   while(cur&&text.contains(cur)){
+    if(cur.textContent===selected){
+     cur.style.backgroundColor="";
+     cur.style.background="";
+     cur.style.removeProperty("box-decoration-break");
+     cur.style.removeProperty("-webkit-box-decoration-break");
+     cur.style.removeProperty("padding");
+     cur.style.removeProperty("border-radius");
+     if(cur.style.display==="inline-block")cur.style.display="";
+     if(cur.style.lineHeight==="1.15")cur.style.lineHeight="";
+     if(cur.style.verticalAlign==="baseline")cur.style.verticalAlign="";
+    }
+    cur=cur.parentElement?.closest<HTMLElement>("span")||null;
+   }
+  };
+  clearAncestor(startEl); if(endEl!==startEl)clearAncestor(endEl);
+
+  const frag=r.extractContents();
+
+  // Borra cualquier resaltado viejo que haya quedado anidado DENTRO de la selección.
+  frag.querySelectorAll?.("span").forEach((node:any)=>{
+   if(!node?.style)return;
+   node.style.backgroundColor="";
+   node.style.background="";
+   node.style.removeProperty("box-decoration-break");
+   node.style.removeProperty("-webkit-box-decoration-break");
+   node.style.removeProperty("padding");
+   node.style.removeProperty("border-radius");
+   if(node.style.display==="inline-block")node.style.display="";
+   if(node.style.lineHeight==="1.15")node.style.lineHeight="";
+   if(node.style.verticalAlign==="baseline")node.style.verticalAlign="";
+  });
+
+  const isClear=!color||color==="transparent";
+  let inserted:Node;
+
+  if(isClear){
+   // "Sin resaltado": vuelve a insertar el contenido limpio, sin crear otra capa.
+   inserted=frag;
+   r.insertNode(frag);
+  }else{
+   // Un único resaltado nuevo, reemplazando los anteriores.
+   const span=document.createElement("span");
+   span.dataset.plannerHighlight="1";
+   span.style.backgroundColor=color;
+   span.style.display="inline-block";
+   span.style.lineHeight="1.15";
+   span.style.verticalAlign="baseline";
+   span.style.boxDecorationBreak="clone";
+   span.style.setProperty("-webkit-box-decoration-break","clone");
+   span.style.padding="0 .06em";
+   span.style.borderRadius=".12em";
+   span.appendChild(frag);
+   r.insertNode(span);
+   inserted=span;
+  }
+
+  const nr=document.createRange();
+  if(isClear){
+   // Reselecciona por texto alrededor del punto de inserción sin alterar undo/redo.
+   const parent=r.startContainer.nodeType===Node.ELEMENT_NODE?r.startContainer as Node:r.startContainer.parentNode;
+   if(parent){
+    const walker=document.createTreeWalker(parent,NodeFilter.SHOW_TEXT);
+    let first:Node|null=null,last:Node|null=null,total="";
+    let n=walker.nextNode();
+    while(n){
+     const t=n.textContent||"";
+     if(t&&selected.includes(t.trim())&&t.trim()){if(!first)first=n;last=n;total+=t}
+     n=walker.nextNode();
+    }
+    if(first&&last){nr.setStart(first,0);nr.setEnd(last,last.textContent?.length||0)}
+    else{nr.setStart(r.startContainer,r.startOffset);nr.collapse(true)}
+   }else{nr.setStart(r.startContainer,r.startOffset);nr.collapse(true)}
+  }else{
+   nr.selectNodeContents(inserted);
+  }
+  s.removeAllRanges();s.addRange(nr);
+ }catch{}
+}
 function restoreSelectionSnapshot(text:HTMLElement,saved:SavedSelection){const start=nodeFromPath(text,saved.startPath),end=nodeFromPath(text,saved.endPath);if(!start||!end)return false;const r=document.createRange();try{r.setStart(start,Math.min(saved.startOffset,start.nodeType===Node.TEXT_NODE?(start.textContent?.length||0):start.childNodes.length));r.setEnd(end,Math.min(saved.endOffset,end.nodeType===Node.TEXT_NODE?(end.textContent?.length||0):end.childNodes.length))}catch{return false}const s=window.getSelection();if(!s)return false;s.removeAllRanges();s.addRange(r);return true}
 export function FlexibleNotes(){
  const {lang}=useLanguage(); const [notes,setNotes]=useState<Note[]>([]); const [drag,setDrag]=useState<string|null>(null); const [backgroundPicker,setBackgroundPicker]=useState<string|null>(null); const fileRef=useRef<HTMLInputElement>(null); const uploadNote=useRef<string|null>(null); const selectionRef=useRef<SavedSelection|null>(null); const activeNoteRef=useRef<string|null>(null); const transformRef=useRef<{noteId:string;wrap:HTMLElement;root:HTMLElement;mode:"move"|"resize";corner:string;x:number;y:number;left:number;top:number;width:number;ratio:number}|null>(null); const selectedImageKeyRef=useRef<{noteId:string;src:string}|null>(null); const selectedImageRef=useRef<HTMLElement|null>(null); const historyRef=useRef<Record<string,{undo:string[];redo:string[]}>>({});
@@ -95,7 +187,7 @@ export function FlexibleNotes(){
 else if(e.detail.command==="textShadow"){const n=Number(e.detail.value||0);applyFlexInlineStyle(text,{textShadow:n?`0 ${n}px ${Math.max(1,n*2)}px rgba(0,0,0,.45)`:"none"})}
 else if(e.detail.command==="textStroke"){const n=Number(e.detail.value||0);localStorage.setItem("planner-flex-stroke-width",String(n));const color=localStorage.getItem("planner-flex-stroke-color")||"#111111";applyFlexInlineStyle(text,{WebkitTextStroke:n?`${n}px ${color}`:"0 transparent",paintOrder:"stroke fill"})}
 else if(e.detail.command==="strokeColor"){const color=e.detail.value||"#111111";localStorage.setItem("planner-flex-stroke-color",color);const n=Number(localStorage.getItem("planner-flex-stroke-width")||1);applyFlexInlineStyle(text,{WebkitTextStroke:n?`${n}px ${color}`:"0 transparent",paintOrder:"stroke fill"})}
-else if(e.detail.command==="hiliteColor"){applyFlexInlineStyle(text,{backgroundColor:e.detail.value==="transparent"?"transparent":(e.detail.value||"transparent"),display:"inline-block",lineHeight:"1.15",verticalAlign:"baseline",boxDecorationBreak:"clone",WebkitBoxDecorationBreak:"clone",padding:"0 .06em",borderRadius:".12em"})}
+else if(e.detail.command==="hiliteColor"){applyFlexHighlight(text,e.detail.value||"transparent")}
 else{document.execCommand(e.detail.command,false,e.detail.value)}const nextSaved=saveSelectionSnapshot(id,text);if(nextSaved)selectionRef.current=nextSaved;saveDom(id,root)};const saveHandler=()=>{const id=activeNoteRef.current||document.body.dataset.activeFlexNoteId;if(!id)return;const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);if(root)saveDom(id,root)};const removeSelectedHandler=()=>{const id=activeNoteRef.current||document.body.dataset.activeFlexNoteId;if(!id)return;const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);const sel=root?.querySelector<HTMLElement>('.planner-flex-free-image[data-selected="true"]');if(!root||!sel)return;sel.remove();saveDom(id,root)};window.addEventListener("planner:flex-add-image",imageHandler as EventListener);window.addEventListener("planner:flex-format",formatHandler as EventListener);window.addEventListener("planner:flex-save",saveHandler as EventListener);window.addEventListener("planner:flex-remove-selected",removeSelectedHandler as EventListener);const historyHandler=(ev:Event)=>{const e=ev as CustomEvent<{action:"undo"|"redo"}>,id=activeNoteRef.current||document.body.dataset.activeFlexNoteId;if(id&&e.detail?.action)historyAction(id,e.detail.action)};const sampleColorHandler=()=>{const id=activeNoteRef.current||document.body.dataset.activeFlexNoteId;if(!id)return;const text=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"] .planner-flex-text`),s=window.getSelection();if(!text||!s||!s.rangeCount)return;const r=s.getRangeAt(0),node=r.startContainer.nodeType===Node.ELEMENT_NODE?r.startContainer as Element:r.startContainer.parentElement;if(!node||!text.contains(node))return;const color=getComputedStyle(node).color,m=color.match(/\d+/g);if(!m||m.length<3)return;const hex="#"+m.slice(0,3).map(v=>Number(v).toString(16).padStart(2,"0")).join("").toUpperCase();window.dispatchEvent(new CustomEvent("planner:sampled-color",{detail:{color:hex}}))};window.addEventListener("planner:flex-history",historyHandler as EventListener);window.addEventListener("planner:flex-sample-color",sampleColorHandler as EventListener);return()=>{window.removeEventListener("planner:flex-add-image",imageHandler as EventListener);window.removeEventListener("planner:flex-format",formatHandler as EventListener);window.removeEventListener("planner:flex-save",saveHandler as EventListener);window.removeEventListener("planner:flex-remove-selected",removeSelectedHandler as EventListener);window.removeEventListener("planner:flex-history",historyHandler as EventListener);window.removeEventListener("planner:flex-sample-color",sampleColorHandler as EventListener)}},[]);
  const startTransform=(noteId:string,e:React.PointerEvent<HTMLDivElement>)=>{markActive(noteId);const prev=transformRef.current;if(prev){prev.wrap.style.zIndex="";prev.wrap.style.filter="";prev.wrap.style.opacity="";saveDom(prev.noteId,prev.root);transformRef.current=null}const target=e.target as HTMLElement;const wrap=target.closest<HTMLElement>(".planner-flex-free-image");const root=e.currentTarget;if(!wrap){deselectAllImages();return;}pushHistory(noteId,root);e.preventDefault();e.stopPropagation();if(target.dataset.action==="delete"){wrap.remove();saveDom(noteId,root);return;}document.querySelectorAll<HTMLElement>(".planner-flex-free-image,.planner-free-image").forEach(x=>x.dataset.selected="false");window.getSelection()?.removeAllRanges();wrap.dataset.selected="true";selectedImageRef.current=wrap;selectedImageKeyRef.current={noteId,src:wrap.querySelector<HTMLImageElement>("img")?.src||""};e.preventDefault();e.stopPropagation();const rect=wrap.getBoundingClientRect(),img=wrap.querySelector("img") as HTMLImageElement|null;transformRef.current={noteId,wrap,root,mode:target.dataset.resize?"resize":"move",corner:target.dataset.resize||"",x:e.clientX,y:e.clientY,left:parseFloat(wrap.style.left)||0,top:parseFloat(wrap.style.top)||0,width:rect.width,ratio:img?.naturalWidth&&img?.naturalHeight?img.naturalWidth/img.naturalHeight:rect.width/Math.max(rect.height,1)};root.setPointerCapture?.(e.pointerId)};
  const moveTransform=(e:React.PointerEvent<HTMLDivElement>)=>{const t=transformRef.current;if(!t)return;e.preventDefault();e.stopPropagation();const dx=e.clientX-t.x,dy=e.clientY-t.y;if(t.mode==="move"){const rootRect=t.root.getBoundingClientRect(),wrapRect=t.wrap.getBoundingClientRect();const maxLeft=Math.max(0,rootRect.width-wrapRect.width),maxTop=Math.max(0,rootRect.height-wrapRect.height);const nextLeft=Math.min(Math.max(0,t.left+dx),maxLeft),nextTop=Math.min(Math.max(0,t.top+dy),maxTop);t.wrap.style.left=`${nextLeft}px`;t.wrap.style.top=`${nextTop}px`;}else{const west=t.corner.includes("w"),north=t.corner.includes("n");const width=Math.max(55,t.width+(west?-dx:dx));t.wrap.style.width=`${width}px`;t.wrap.style.left=`${west?t.left+(t.width-width):t.left}px`;t.wrap.style.top=`${Math.max(0,north?t.top+(t.width-width)/t.ratio:t.top)}px`;}};

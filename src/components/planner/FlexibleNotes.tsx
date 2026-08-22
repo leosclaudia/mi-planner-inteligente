@@ -67,110 +67,52 @@ function applyFlexInlineStyle(text:HTMLElement,styles:Record<string,string>){
 function applyFlexHighlight(text:HTMLElement,color:string){
  const s=window.getSelection();if(!s||!s.rangeCount)return;
  const r=s.getRangeAt(0);if(r.collapsed||!text.contains(r.startContainer)||!text.contains(r.endContainer))return;
+ const isClear=!color||color==="transparent";
+
+ if(isClear){
+  try{
+   // Extraemos SOLO lo seleccionado, limpiamos el fondo en todos sus niveles
+   // y lo reinsertamos. Los demás estilos (fuente, tamaño, borde, cursiva, etc.) quedan.
+   const frag=r.extractContents();
+   const clean=(el:HTMLElement)=>{
+    el.style.removeProperty("background");
+    el.style.removeProperty("background-color");
+    el.removeAttribute("data-planner-highlight");
+    if(el.getAttribute("style")==="")el.removeAttribute("style");
+   };
+   Array.from(frag.querySelectorAll<HTMLElement>("*")).forEach(clean);
+
+   const wrapper=document.createElement("span");
+   wrapper.appendChild(frag);
+   clean(wrapper);
+   r.insertNode(wrapper);
+
+   // Quitar fondo heredado del propio wrapper/ancestros creados por resaltados viejos
+   let p=wrapper.parentElement;
+   while(p&&p!==text){
+    if(p.dataset.plannerHighlight==="1" || p.style.background || p.style.backgroundColor){
+     p.style.removeProperty("background");
+     p.style.removeProperty("background-color");
+     delete p.dataset.plannerHighlight;
+     if(p.getAttribute("style")==="")p.removeAttribute("style");
+    }
+    p=p.parentElement;
+   }
+
+   const nr=document.createRange();nr.selectNodeContents(wrapper);
+   s.removeAllRanges();s.addRange(nr);
+  }catch{}
+  return;
+ }
+
  try{
-  const selected=r.toString();
-  const startEl=r.startContainer.nodeType===Node.ELEMENT_NODE?r.startContainer as HTMLElement:r.startContainer.parentElement;
-  const endEl=r.endContainer.nodeType===Node.ELEMENT_NODE?r.endContainer as HTMLElement:r.endContainer.parentElement;
-
-  // Limpia resaltados antiguos de spans ancestros que corresponden exactamente
-  // a la selección actual. No toca borde, sombra, fuente, color ni otros estilos.
-  const clearAncestor=(el:HTMLElement|null)=>{
-   let cur=el?.closest<HTMLElement>("span")||null;
-   while(cur&&text.contains(cur)){
-    if(cur.textContent===selected){
-     cur.style.backgroundColor="";
-     cur.style.background="";
-     cur.style.removeProperty("box-decoration-break");
-     cur.style.removeProperty("-webkit-box-decoration-break");
-     cur.style.removeProperty("padding");
-     cur.style.removeProperty("border-radius");
-     if(cur.style.display==="inline-block")cur.style.display="";
-     if(cur.style.lineHeight==="1.15")cur.style.lineHeight="";
-     if(cur.style.verticalAlign==="baseline")cur.style.verticalAlign="";
-    }
-    cur=cur.parentElement?.closest<HTMLElement>("span")||null;
-   }
-  };
-  clearAncestor(startEl); if(endEl!==startEl)clearAncestor(endEl);
-
   const frag=r.extractContents();
-
-  // Borra cualquier resaltado viejo que haya quedado anidado DENTRO de la selección.
-  frag.querySelectorAll?.("span").forEach((node:any)=>{
-   if(!node?.style)return;
-   node.style.backgroundColor="";
-   node.style.background="";
-   node.style.removeProperty("box-decoration-break");
-   node.style.removeProperty("-webkit-box-decoration-break");
-   node.style.removeProperty("padding");
-   node.style.removeProperty("border-radius");
-   if(node.style.display==="inline-block")node.style.display="";
-   if(node.style.lineHeight==="1.15")node.style.lineHeight="";
-   if(node.style.verticalAlign==="baseline")node.style.verticalAlign="";
-  });
-
-  const isClear=!color||color==="transparent";
-  let inserted:Node;
-
-  if(isClear){
-   // Chrome sabe dividir correctamente un resaltado cuando la selección
-   // ocupa solo una parte de un span antiguo. Hacemos primero esa división.
-   try{
-    document.execCommand("styleWithCSS",false,"true");
-    document.execCommand("hiliteColor",false,"transparent");
-    document.execCommand("backColor",false,"transparent");
-   }catch{}
-   // Luego limpiamos cualquier capa de resaltado que el HTML histórico
-   // haya dejado dentro de la selección actual.
-   const current=window.getSelection();
-   if(current&&current.rangeCount){
-    const cr=current.getRangeAt(0);
-    const cfrag=cr.cloneContents();
-    const hasNested=!!cfrag.querySelector?.("[data-planner-highlight],span[style*='background']");
-    if(!hasNested){
-     const nextSaved=document.createRange();
-     try{nextSaved.setStart(cr.startContainer,cr.startOffset);nextSaved.setEnd(cr.endContainer,cr.endOffset);current.removeAllRanges();current.addRange(nextSaved)}catch{}
-    }
-   }
-   // "Sin resaltado": vuelve a insertar el contenido limpio, sin crear otra capa.
-   inserted=frag;
-   r.insertNode(frag);
-  }else{
-   // Un único resaltado nuevo, reemplazando los anteriores.
-   const span=document.createElement("span");
-   span.dataset.plannerHighlight="1";
-   span.style.backgroundColor=color;
-   span.style.display="inline-block";
-   span.style.lineHeight="1.15";
-   span.style.verticalAlign="baseline";
-   span.style.boxDecorationBreak="clone";
-   span.style.setProperty("-webkit-box-decoration-break","clone");
-   span.style.padding="0 .06em";
-   span.style.borderRadius=".12em";
-   span.appendChild(frag);
-   r.insertNode(span);
-   inserted=span;
-  }
-
-  const nr=document.createRange();
-  if(isClear){
-   // Reselecciona por texto alrededor del punto de inserción sin alterar undo/redo.
-   const parent=r.startContainer.nodeType===Node.ELEMENT_NODE?r.startContainer as Node:r.startContainer.parentNode;
-   if(parent){
-    const walker=document.createTreeWalker(parent,NodeFilter.SHOW_TEXT);
-    let first:Node|null=null,last:Node|null=null,total="";
-    let n=walker.nextNode();
-    while(n){
-     const t=n.textContent||"";
-     if(t&&selected.includes(t.trim())&&t.trim()){if(!first)first=n;last=n;total+=t}
-     n=walker.nextNode();
-    }
-    if(first&&last){nr.setStart(first,0);nr.setEnd(last,last.textContent?.length||0)}
-    else{nr.setStart(r.startContainer,r.startOffset);nr.collapse(true)}
-   }else{nr.setStart(r.startContainer,r.startOffset);nr.collapse(true)}
-  }else{
-   nr.selectNodeContents(inserted);
-  }
+  const span=document.createElement("span");
+  span.dataset.plannerHighlight="1";
+  span.style.backgroundColor=color;
+  span.appendChild(frag);
+  r.insertNode(span);
+  const nr=document.createRange();nr.selectNodeContents(span);
   s.removeAllRanges();s.addRange(nr);
  }catch{}
 }

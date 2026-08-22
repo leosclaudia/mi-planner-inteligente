@@ -34,7 +34,7 @@ function restoreSelectionSnapshot(text:HTMLElement,saved:SavedSelection){const s
 export function FlexibleNotes(){
  const {lang}=useLanguage(); const [notes,setNotes]=useState<Note[]>([]); const [drag,setDrag]=useState<string|null>(null); const [backgroundPicker,setBackgroundPicker]=useState<string|null>(null); const fileRef=useRef<HTMLInputElement>(null); const uploadNote=useRef<string|null>(null); const selectionRef=useRef<SavedSelection|null>(null); const activeNoteRef=useRef<string|null>(null); const transformRef=useRef<{noteId:string;wrap:HTMLElement;root:HTMLElement;mode:"move"|"resize";corner:string;x:number;y:number;left:number;top:number;width:number;ratio:number}|null>(null); const selectedImageKeyRef=useRef<{noteId:string;src:string}|null>(null); const selectedImageRef=useRef<HTMLElement|null>(null); const historyRef=useRef<Record<string,{undo:string[];redo:string[]}>>({});
  useEffect(()=>setNotes(read()),[]);
- useEffect(()=>{document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle").forEach(h=>h.remove());w.querySelectorAll(".flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected=(selectedImageRef.current===w)?"true":"false"});requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>fitNoteHeight(root)))},[notes.map(n=>n.id).join("|")]);
+ useEffect(()=>{document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle").forEach(h=>h.remove());w.querySelectorAll(".flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected=(selectedImageRef.current===w)?"true":"false"});requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>{fitNoteHeight(root);const id=root.dataset.flexNoteBody;if(id)saveDom(id,root)}))},[notes.map(n=>n.id).join("|")]);
  const persist=(next:Note[])=>{setNotes(next);localStorage.setItem(KEY,JSON.stringify(next))};
  const patch=(id:string,p:Partial<Note>)=>setNotes(prev=>{const next=prev.map(n=>n.id===id?{...n,...p}:n);localStorage.setItem(KEY,JSON.stringify(next));return next});
  const fitNoteHeight=(root:HTMLElement)=>{const card=root.closest<HTMLElement>(".planner-flex-note");if(card){card.style.height="auto";card.style.minHeight="0px"}
@@ -53,17 +53,24 @@ export function FlexibleNotes(){
   // Las notas antiguas podían guardar una coordenada "top" muy baja: achicar la imagen
   // no reducía la tarjeta porque ese hueco seguía contando como contenido.
   if(images.length){
+   // Rebase legacy absolute image coordinates against the real end of the text.
+   // Preserve relative spacing between multiple images, but remove stale empty space.
    const textEnd=bottom;
-   const tops=images.map(w=>parseFloat(w.style.top||"0")||0);
-   const firstTop=Math.min(...tops);
-   const desiredTop=Math.max(textEnd>0?textEnd+14:14,14);
-   if(firstTop-desiredTop>28){
-    const shift=firstTop-desiredTop;
-    images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;w.style.top=`${Math.max(0,top-shift)}px`});
+   const sorted=[...images].sort((a,b)=>(parseFloat(a.style.top||"0")||0)-(parseFloat(b.style.top||"0")||0));
+   const firstTop=parseFloat(sorted[0].style.top||"0")||0;
+   const targetFirst=Math.max(14,textEnd+(textEnd>0?12:0));
+   const delta=firstTop-targetFirst;
+   if(Math.abs(delta)>1){
+    sorted.forEach(w=>{
+     const oldTop=parseFloat(w.style.top||"0")||0;
+     w.style.top=`${Math.max(0,oldTop-delta)}px`;
+    });
    }
   }
   images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;bottom=Math.max(bottom,top+w.offsetHeight)});
-  const compact=Math.max(96,Math.ceil(bottom+24));
+  const compact=Math.max(96,Math.ceil(bottom+18));
+  root.style.minHeight=`${compact}px`;root.style.height=`${compact}px`;
+  if(card){card.style.height="auto";card.style.minHeight="0px"}
   root.style.minHeight=`${compact}px`;root.style.height=`${compact}px`;
  };
  const historyFor=(id:string)=>historyRef.current[id]||(historyRef.current[id]={undo:[],redo:[]});
@@ -71,7 +78,7 @@ export function FlexibleNotes(){
  const pushHistory=(id:string,root:HTMLElement)=>{const h=historyFor(id),html=snapshot(root);if(h.undo[h.undo.length-1]!==html)h.undo.push(html);if(h.undo.length>60)h.undo.shift();h.redo=[]};
  const restoreHistory=(id:string,html:string)=>{const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);if(!root)return;const parts=splitHtml(html),text=root.querySelector<HTMLElement>(".planner-flex-text"),layer=root.querySelector<HTMLElement>(".planner-flex-image-layer");if(text)text.innerHTML=parts.text;if(layer)layer.innerHTML=parts.images;fitNoteHeight(root);patch(id,{html});requestAnimationFrame(()=>{root.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle,.flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected="false"})})};
  const historyAction=(id:string,action:"undo"|"redo")=>{const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);if(!root)return;const h=historyFor(id);if(action==="undo"){if(!h.undo.length)return;h.redo.push(snapshot(root));restoreHistory(id,h.undo.pop()!)}else{if(!h.redo.length)return;h.undo.push(snapshot(root));restoreHistory(id,h.redo.pop()!)}};
- useEffect(()=>{requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>fitNoteHeight(root)))},[notes]);
+ useEffect(()=>{requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>{fitNoteHeight(root);const id=root.dataset.flexNoteBody;if(id)saveDom(id,root)}))},[notes]);
  const saveDom=(id:string,root:HTMLElement)=>{fitNoteHeight(root);const text=root.querySelector<HTMLElement>(".planner-flex-text")?.innerHTML||"";const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{const clone=x.cloneNode(true) as HTMLElement;clone.dataset.selected="false";return clone.outerHTML}).join("");patch(id,{html:text+images})};
  const add=()=>persist([...notes,{id:crypto.randomUUID(),title:lang==="en"?"New note":"Nueva nota",date:new Date().toISOString().slice(0,10),html:"",order:notes.length,backgroundColor:"#FFFFFF"}]);
  const remove=(id:string)=>{if(transformRef.current?.noteId===id)transformRef.current=null;document.querySelectorAll<HTMLElement>(`[data-note-id="${id}"] .planner-flex-free-image`).forEach(x=>x.remove());document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(x=>x.dataset.selected="false");persist(notes.filter(n=>n.id!==id))};

@@ -165,14 +165,18 @@ function applyFlexFontSizePx(text:HTMLElement,value:string){
   const endEl=r.endContainer.nodeType===Node.ELEMENT_NODE?r.endContainer as HTMLElement:r.endContainer.parentElement;
   const exact=startEl?.closest<HTMLElement>("span,font");
   if(exact&&exact===endEl?.closest<HTMLElement>("span,font")&&exact.textContent===selected){
-   exact.style.fontSize=px;
+   exact.querySelectorAll<HTMLElement>("span,font,[style]").forEach(node=>{
+    node.style.removeProperty("font-size");
+    if(node.tagName==="FONT")node.removeAttribute("size");
+   });
+   exact.style.setProperty("font-size",px,"important");
    if(exact.tagName==="FONT")exact.removeAttribute("size");
    const nr=document.createRange();nr.selectNodeContents(exact);s.removeAllRanges();s.addRange(nr);return;
   }
   const frag=r.extractContents();
   frag.querySelectorAll?.("font").forEach((node:any)=>node.removeAttribute?.("size"));
   frag.querySelectorAll?.("[style]").forEach((node:any)=>node.style?.removeProperty?.("font-size"));
-  const span=document.createElement("span");span.style.fontSize=px;span.appendChild(frag);r.insertNode(span);
+  const span=document.createElement("span");span.style.setProperty("font-size",px,"important");span.appendChild(frag);r.insertNode(span);
   const nr=document.createRange();nr.selectNodeContents(span);s.removeAllRanges();s.addRange(nr);
  }catch{}
 }

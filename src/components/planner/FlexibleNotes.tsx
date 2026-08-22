@@ -14,7 +14,15 @@ const read=():Note[]=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}ca
 const flexDeleteHandle=`<button type="button" class="flex-image-delete" contenteditable="false" data-action="delete" aria-label="Eliminar imagen" title="Eliminar imagen"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6l-1 14c-.1 1.1-1 2-2.1 2H8.1C7 22 6.1 21.1 6 20L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>`;
 const flexResizeHandle=`<span class="flex-resize-handle" contenteditable="false" data-resize="se" aria-label="Cambiar tamaño"></span>`;
 const imageHtml=(src:string)=>`<span class="planner-flex-free-image" contenteditable="false" data-selected="false" style="position:absolute;left:16px;top:52px;width:180px;display:block;z-index:20;touch-action:none;user-select:none;"><img src="${src}" alt="Imagen" draggable="false" style="display:block;width:100%;height:auto;border-radius:10px;pointer-events:auto;"/>${flexDeleteHandle}${flexResizeHandle}</span>`;
-const splitHtml=(html:string)=>{const box=document.createElement("div");box.innerHTML=html;const images=Array.from(box.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{x.dataset.selected="false";return x.outerHTML}).join("");box.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return{text:box.innerHTML,images}};
+const trimLegacyTrailingSpace=(html:string)=>{
+ const box=document.createElement("div");box.innerHTML=html;
+ const isEmpty=(el:Element)=>{const clone=el.cloneNode(true) as HTMLElement;clone.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return (clone.textContent||"").replace(/\u200B|\u00A0/g,"").trim()===""&&!clone.querySelector("img,video,audio,canvas,svg,table,hr")};
+ let last=box.lastElementChild;
+ while(last&&isEmpty(last)){const prev=last.previousElementSibling;last.remove();last=prev}
+ while(box.lastChild&&box.lastChild.nodeType===Node.TEXT_NODE&&!(box.lastChild.textContent||"").replace(/\u200B|\u00A0/g,"").trim())box.lastChild.remove();
+ return box.innerHTML;
+};
+const splitHtml=(html:string)=>{const box=document.createElement("div");box.innerHTML=html;const images=Array.from(box.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{x.dataset.selected="false";return x.outerHTML}).join("");box.querySelectorAll(".planner-flex-free-image").forEach(x=>x.remove());return{text:trimLegacyTrailingSpace(box.innerHTML),images}};
 function deselectAllImages(except?:HTMLElement){document.querySelectorAll<HTMLElement>(".planner-free-image, .planner-flex-free-image").forEach(w=>{if(w!==except)w.dataset.selected="false"})}
 function nodePath(root:Node,node:Node){const path:number[]=[];let cur:Node|null=node;while(cur&&cur!==root){const parent=cur.parentNode;if(!parent)return null;path.unshift(Array.prototype.indexOf.call(parent.childNodes,cur));cur=parent}return cur===root?path:null}
 function nodeFromPath(root:Node,path:number[]){let cur:Node=root;for(const i of path){const next=cur.childNodes[i];if(!next)return null;cur=next}return cur}
@@ -37,20 +45,33 @@ export function FlexibleNotes(){
  useEffect(()=>{document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle").forEach(h=>h.remove());w.querySelectorAll(".flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected=(selectedImageRef.current===w)?"true":"false"});requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>fitNoteHeight(root)))},[notes.map(n=>n.id).join("|")]);
  const persist=(next:Note[])=>{setNotes(next);localStorage.setItem(KEY,JSON.stringify(next))};
  const patch=(id:string,p:Partial<Note>)=>setNotes(prev=>{const next=prev.map(n=>n.id===id?{...n,...p}:n);localStorage.setItem(KEY,JSON.stringify(next));return next});
- const fitNoteHeight=(root:HTMLElement)=>{const card=root.closest<HTMLElement>(".planner-flex-note");if(card){card.style.height="auto";card.style.minHeight="0px"}
+ const fitNoteHeight=(root:HTMLElement)=>{
+  const card=root.closest<HTMLElement>(".planner-flex-note");
+  if(card){card.style.height="auto";card.style.minHeight="0px"}
   root.style.height="auto";root.style.minHeight="0px";
   const text=root.querySelector<HTMLElement>(".planner-flex-text");
   const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image"));
   let bottom=0;
   if(text){
-   const oldMin=text.style.minHeight,oldH=text.style.height;text.style.minHeight="0px";text.style.height="auto";
-   const tr=text.getBoundingClientRect();let textBottom=0;
-   Array.from(text.childNodes).forEach(node=>{const r=document.createRange();try{r.selectNode(node);const b=r.getBoundingClientRect();if(b.width||b.height)textBottom=Math.max(textBottom,b.bottom-tr.top)}catch{}});
-   bottom=Math.max(bottom,textBottom);
-   text.style.minHeight=oldMin;text.style.height=oldH;
+   const rootRect=root.getBoundingClientRect();
+   const walker=document.createTreeWalker(text,NodeFilter.SHOW_TEXT);
+   let node:Node|null=walker.nextNode();
+   while(node){
+    if((node.textContent||"").replace(/\u200B|\u00A0/g,"").trim()){
+     const r=document.createRange();
+     try{
+      r.selectNodeContents(node);
+      Array.from(r.getClientRects()).forEach(rect=>{if(rect.width||rect.height)bottom=Math.max(bottom,rect.bottom-rootRect.top)})
+     }catch{}
+    }
+    node=walker.nextNode();
+   }
+   text.querySelectorAll<HTMLElement>("img,video,canvas,svg,table,hr").forEach(el=>{
+    const r=el.getBoundingClientRect();if(r.width||r.height)bottom=Math.max(bottom,r.bottom-rootRect.top)
+   });
   }
   images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;bottom=Math.max(bottom,top+w.offsetHeight)});
-  const compact=Math.max(96,Math.ceil(bottom+24));
+  const compact=Math.max(96,Math.ceil(bottom+16));
   root.style.minHeight=`${compact}px`;root.style.height=`${compact}px`;
  };
  const historyFor=(id:string)=>historyRef.current[id]||(historyRef.current[id]={undo:[],redo:[]});

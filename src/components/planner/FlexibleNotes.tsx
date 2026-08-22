@@ -41,36 +41,32 @@ const flexResizeHandle=`<span class="flex-resize-handle" contenteditable="false"
 const imageHtml=(src:string)=>`<span class="planner-flex-free-image" contenteditable="false" data-selected="false" style="position:absolute;left:16px;top:52px;width:180px;display:block;z-index:20;touch-action:none;user-select:none;"><img src="${src}" alt="Imagen" draggable="false" style="display:block;width:100%;height:auto;border-radius:10px;pointer-events:auto;"/>${flexDeleteHandle}${flexResizeHandle}</span>`;
 const normalizeLegacyTextHtml=(html:string)=>{
  const box=document.createElement("div");box.innerHTML=html;
- // Quitar spans puramente estructurales: sin estilo, clase, data ni atributos.
- // Esto conserva exactamente los spans que sí contienen formato visual.
+ const attrs=(el:Element)=>Array.from(el.attributes).map(a=>`${a.name}=${a.value}`).sort().join("|");
  let changed=true;
  while(changed){
   changed=false;
-  Array.from(box.querySelectorAll("span")).forEach(span=>{
+  Array.from(box.querySelectorAll<HTMLElement>("span")).forEach(span=>{
+   // Spans vacíos de formato: son restos estructurales antiguos.
    if(span.attributes.length===0){
-    span.replaceWith(...Array.from(span.childNodes));
-    changed=true;
+    span.replaceWith(...Array.from(span.childNodes));changed=true;return;
+   }
+   // Si un span contiene solamente otro span con exactamente el mismo formato,
+   // conservar una sola capa. Esto evita rangos de selección heredados extraños.
+   if(span.childNodes.length===1){
+    const child=span.firstElementChild as HTMLElement|null;
+    if(child?.tagName==="SPAN"&&attrs(span)===attrs(child)){
+     span.replaceWith(child);changed=true;return;
+    }
    }
   });
  }
- // Unir spans hermanos consecutivos SOLO cuando sus atributos son idénticos.
- const sameAttrs=(a:Element,b:Element)=>{
-  if(a.attributes.length!==b.attributes.length)return false;
-  return Array.from(a.attributes).every(x=>b.getAttribute(x.name)===x.value);
- };
- const walk=(parent:Element)=>{
-  let n=parent.firstElementChild;
-  while(n){
-   const next=n.nextElementSibling;
-   if(n.tagName==="SPAN"&&next?.tagName==="SPAN"&&sameAttrs(n,next)){
-    while(next.firstChild)n.appendChild(next.firstChild);
-    next.remove();continue;
-   }
-   walk(n);n=next;
-  }
- };
- walk(box);
+ // Fusionar texto adyacente sin alterar estilos.
  box.normalize();
+ // Quitar marcadores invisibles históricos que pueden extender la selección.
+ const walker=document.createTreeWalker(box,NodeFilter.SHOW_TEXT);
+ const nodes:Text[]=[];let n:Node|null;
+ while((n=walker.nextNode()))nodes.push(n as Text);
+ nodes.forEach(node=>{node.data=node.data.replace(/\u200B|\uFEFF/g,"")});
  return box.innerHTML;
 };
 const trimLegacyTrailingSpace=(html:string)=>{

@@ -49,19 +49,6 @@ export function FlexibleNotes(){
    bottom=Math.max(bottom,textBottom);
    text.style.minHeight=oldMin;text.style.height=oldH;
   }
-  // Compacta también el espacio vacío heredado entre el último texto y las imágenes.
-  // Las notas antiguas podían guardar una coordenada "top" muy baja: achicar la imagen
-  // no reducía la tarjeta porque ese hueco seguía contando como contenido.
-  if(images.length){
-   const textEnd=bottom;
-   const tops=images.map(w=>parseFloat(w.style.top||"0")||0);
-   const firstTop=Math.min(...tops);
-   const desiredTop=Math.max(textEnd>0?textEnd+14:14,14);
-   if(firstTop-desiredTop>28){
-    const shift=firstTop-desiredTop;
-    images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;w.style.top=`${Math.max(0,top-shift)}px`});
-   }
-  }
   images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;bottom=Math.max(bottom,top+w.offsetHeight)});
   const compact=Math.max(96,Math.ceil(bottom+24));
   root.style.minHeight=`${compact}px`;root.style.height=`${compact}px`;

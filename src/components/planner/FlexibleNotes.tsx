@@ -113,6 +113,25 @@ function applyFlexHighlight(text:HTMLElement,color:string){
   let inserted:Node;
 
   if(isClear){
+   // Chrome sabe dividir correctamente un resaltado cuando la selección
+   // ocupa solo una parte de un span antiguo. Hacemos primero esa división.
+   try{
+    document.execCommand("styleWithCSS",false,"true");
+    document.execCommand("hiliteColor",false,"transparent");
+    document.execCommand("backColor",false,"transparent");
+   }catch{}
+   // Luego limpiamos cualquier capa de resaltado que el HTML histórico
+   // haya dejado dentro de la selección actual.
+   const current=window.getSelection();
+   if(current&&current.rangeCount){
+    const cr=current.getRangeAt(0);
+    const cfrag=cr.cloneContents();
+    const hasNested=!!cfrag.querySelector?.("[data-planner-highlight],span[style*='background']");
+    if(!hasNested){
+     const nextSaved=document.createRange();
+     try{nextSaved.setStart(cr.startContainer,cr.startOffset);nextSaved.setEnd(cr.endContainer,cr.endOffset);current.removeAllRanges();current.addRange(nextSaved)}catch{}
+    }
+   }
    // "Sin resaltado": vuelve a insertar el contenido limpio, sin crear otra capa.
    inserted=frag;
    r.insertNode(frag);

@@ -49,13 +49,14 @@ export function FlexibleNotes(){
   }
   images.forEach(w=>{const top=parseFloat(w.style.top||"0")||0;bottom=Math.max(bottom,top+w.offsetHeight)});
   const compact=Math.max(120,Math.ceil(bottom+28));
-  root.style.minHeight=`${compact}px`;
+  root.style.minHeight=`${compact}px`;root.style.height=`${compact}px`;
  };
  const historyFor=(id:string)=>historyRef.current[id]||(historyRef.current[id]={undo:[],redo:[]});
  const snapshot=(root:HTMLElement)=>{const text=root.querySelector<HTMLElement>(".planner-flex-text")?.innerHTML||"";const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{const clone=x.cloneNode(true) as HTMLElement;clone.dataset.selected="false";return clone.outerHTML}).join("");return text+images};
  const pushHistory=(id:string,root:HTMLElement)=>{const h=historyFor(id),html=snapshot(root);if(h.undo[h.undo.length-1]!==html)h.undo.push(html);if(h.undo.length>60)h.undo.shift();h.redo=[]};
  const restoreHistory=(id:string,html:string)=>{const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);if(!root)return;const parts=splitHtml(html),text=root.querySelector<HTMLElement>(".planner-flex-text"),layer=root.querySelector<HTMLElement>(".planner-flex-image-layer");if(text)text.innerHTML=parts.text;if(layer)layer.innerHTML=parts.images;fitNoteHeight(root);patch(id,{html});requestAnimationFrame(()=>{root.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(w=>{w.querySelectorAll(".flex-resize-handle,.flex-image-delete").forEach(h=>h.remove());w.insertAdjacentHTML("beforeend",flexDeleteHandle+flexResizeHandle);w.dataset.selected="false"})})};
  const historyAction=(id:string,action:"undo"|"redo")=>{const root=document.querySelector<HTMLElement>(`[data-flex-note-body="${id}"]`);if(!root)return;const h=historyFor(id);if(action==="undo"){if(!h.undo.length)return;h.redo.push(snapshot(root));restoreHistory(id,h.undo.pop()!)}else{if(!h.redo.length)return;h.undo.push(snapshot(root));restoreHistory(id,h.redo.pop()!)}};
+ useEffect(()=>{requestAnimationFrame(()=>document.querySelectorAll<HTMLElement>("[data-flex-note-body]").forEach(root=>fitNoteHeight(root)))},[notes]);
  const saveDom=(id:string,root:HTMLElement)=>{fitNoteHeight(root);const text=root.querySelector<HTMLElement>(".planner-flex-text")?.innerHTML||"";const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{const clone=x.cloneNode(true) as HTMLElement;clone.dataset.selected="false";return clone.outerHTML}).join("");patch(id,{html:text+images})};
  const add=()=>persist([...notes,{id:crypto.randomUUID(),title:lang==="en"?"New note":"Nueva nota",date:new Date().toISOString().slice(0,10),html:"",order:notes.length,backgroundColor:"#FFFFFF"}]);
  const remove=(id:string)=>{if(transformRef.current?.noteId===id)transformRef.current=null;document.querySelectorAll<HTMLElement>(`[data-note-id="${id}"] .planner-flex-free-image`).forEach(x=>x.remove());document.querySelectorAll<HTMLElement>(".planner-flex-free-image").forEach(x=>x.dataset.selected="false");persist(notes.filter(n=>n.id!==id))};

@@ -46,12 +46,9 @@ const normalizeLegacyTextHtml=(html:string)=>{
  while(changed){
   changed=false;
   Array.from(box.querySelectorAll<HTMLElement>("span")).forEach(span=>{
-   // Spans vacíos de formato: son restos estructurales antiguos.
    if(span.attributes.length===0){
     span.replaceWith(...Array.from(span.childNodes));changed=true;return;
    }
-   // Si un span contiene solamente otro span con exactamente el mismo formato,
-   // conservar una sola capa. Esto evita rangos de selección heredados extraños.
    if(span.childNodes.length===1){
     const child=span.firstElementChild as HTMLElement|null;
     if(child?.tagName==="SPAN"&&attrs(span)===attrs(child)){
@@ -60,13 +57,24 @@ const normalizeLegacyTextHtml=(html:string)=>{
    }
   });
  }
- // Fusionar texto adyacente sin alterar estilos.
+ Array.from(box.querySelectorAll<HTMLElement>("[contenteditable='false']")).forEach(el=>{
+  if(el.matches("img,button,.planner-flex-free-image,.flex-resize-handle,.planner-image-delete"))return;
+  if(el.querySelector("img,button"))return;
+  el.removeAttribute("contenteditable");
+ });
+ Array.from(box.querySelectorAll<HTMLElement>("[style]")).forEach(el=>{
+  const us=el.style.userSelect || el.style.getPropertyValue("-webkit-user-select");
+  if(us==="none"||us==="all"){
+   el.style.removeProperty("user-select");
+   el.style.removeProperty("-webkit-user-select");
+   if(el.getAttribute("style")==="")el.removeAttribute("style");
+  }
+ });
  box.normalize();
- // Quitar marcadores invisibles históricos que pueden extender la selección.
  const walker=document.createTreeWalker(box,NodeFilter.SHOW_TEXT);
  const nodes:Text[]=[];let n:Node|null;
  while((n=walker.nextNode()))nodes.push(n as Text);
- nodes.forEach(node=>{node.data=node.data.replace(/\u200B|\uFEFF/g,"")});
+ nodes.forEach(node=>{node.data=node.data.replace(/\u200B|\uFEFF|\u2060/g,"")});
  return box.innerHTML;
 };
 const trimLegacyTrailingSpace=(html:string)=>{

@@ -351,17 +351,36 @@ export function Cuaderno() {
                       <div className="mt-2 space-y-2 rounded-xl border bg-background/90 p-2">
                         <div className="grid grid-cols-2 gap-1.5">
                           <select defaultValue="Arial" onMouseDown={rememberSelection} onChange={e=>formatText("fontName",e.target.value)}
-                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Fuente">
-                            <option value="Arial">Arial</option>
-                            <option value="Georgia">Georgia</option>
-                            <option value="Lora">Lora</option>
-                            <option value="Verdana">Verdana</option>
-                            <option value="Courier New">Courier</option>
+                            className="h-9 min-w-0 rounded-full border bg-card px-3 text-[11px] outline-none" aria-label="Fuente">
+                            <option value="Arial" style={{fontFamily:'Arial'}}>Arial</option>
+                            <option value="Verdana" style={{fontFamily:'Verdana'}}>Verdana</option>
+                            <option value="Tahoma" style={{fontFamily:'Tahoma'}}>Tahoma</option>
+                            <option value="Trebuchet MS" style={{fontFamily:'Trebuchet MS'}}>Trebuchet MS</option>
+                            <option value="Georgia" style={{fontFamily:'Georgia'}}>Georgia</option>
+                            <option value="Times New Roman" style={{fontFamily:'Times New Roman'}}>Times New Roman</option>
+                            <option value="Courier New" style={{fontFamily:'Courier New'}}>Courier New</option>
+                            <option value="Comic Sans MS" style={{fontFamily:'Comic Sans MS'}}>Comic Sans MS</option>
+                            <option value="Segoe UI" style={{fontFamily:'Segoe UI'}}>Segoe UI</option>
+                            <option value="Calibri" style={{fontFamily:'Calibri'}}>Calibri</option>
+                            <option value="Garamond" style={{fontFamily:'Garamond'}}>Garamond</option>
+                            <option value="Helvetica" style={{fontFamily:'Helvetica'}}>Helvetica</option>
+                            <option value="Palatino" style={{fontFamily:'Palatino'}}>Palatino</option>
+                            <option value="Lora" style={{fontFamily:'Lora'}}>Lora</option>
+                            <option value="Century Gothic" style={{fontFamily:'Century Gothic'}}>Century Gothic</option>
+                            <option value="Lucida Sans" style={{fontFamily:'Lucida Sans'}}>Lucida Sans</option>
+                            <option value="Lucida Console" style={{fontFamily:'Lucida Console'}}>Lucida Console</option>
+                            <option value="Book Antiqua" style={{fontFamily:'Book Antiqua'}}>Book Antiqua</option>
+                            <option value="Impact" style={{fontFamily:'Impact'}}>Impact</option>
+                            <option value="Consolas" style={{fontFamily:'Consolas'}}>Consolas</option>
+                            <option value="Franklin Gothic Medium" style={{fontFamily:'Franklin Gothic Medium'}}>Franklin Gothic Medium</option>
+                            <option value="Rockwell" style={{fontFamily:'Rockwell'}}>Rockwell</option>
+                            <option value="Baskerville" style={{fontFamily:'Baskerville'}}>Baskerville</option>
+                            <option value="Cambria" style={{fontFamily:'Cambria'}}>Cambria</option>
+                            <option value="Candara" style={{fontFamily:'Candara'}}>Candara</option>
                           </select>
                           <select defaultValue="16px" onMouseDown={rememberSelection} onChange={e=>setTextSize(e.target.value)}
-                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Tamaño">
-                            <option value="12px">12</option><option value="14px">14</option><option value="16px">16</option>
-                            <option value="18px">18</option><option value="22px">22</option><option value="28px">28</option><option value="36px">36</option>
+                            className="h-9 min-w-0 rounded-full border bg-card px-3 text-[11px] outline-none" aria-label="Tamaño">
+<option value="8px">8</option><option value="10px">10</option><option value="12px">12</option><option value="14px">14</option><option value="16px">16</option><option value="18px">18</option><option value="20px">20</option><option value="22px">22</option><option value="24px">24</option><option value="28px">28</option><option value="30px">30</option><option value="32px">32</option><option value="34px">34</option><option value="36px">36</option><option value="38px">38</option><option value="40px">40</option><option value="42px">42</option><option value="44px">44</option><option value="46px">46</option><option value="48px">48</option>
                           </select>
                         </div>
                         <div className="flex flex-wrap gap-1">
@@ -373,11 +392,15 @@ export function Cuaderno() {
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyRight")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Derecha"><AlignRight className="h-4 w-4"/></button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
-                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          <label onMouseDown={rememberSelection} title="Color de texto" className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-card shadow-sm">
+                            <span className="text-[11px] font-bold">A</span>
+                            <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer rounded-full opacity-0"/>
+                            <span className="absolute bottom-1 h-1 w-4 rounded-full bg-[#2f2926]"/>
                           </label>
-                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
-                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          <label onMouseDown={rememberSelection} title="Resaltador" className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-card shadow-sm">
+                            <Highlighter className="h-4 w-4"/>
+                            <input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer rounded-full opacity-0"/>
+                            <span className="absolute bottom-1 h-1 w-4 rounded-full bg-[#fff2a8]"/>
                           </label>
                         </div>
                       </div>

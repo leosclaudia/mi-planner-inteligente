@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, ListChecks, NotebookPen } from "lucide-react";
+import { BookOpen, CalendarDays, ListChecks, NotebookPen } from "lucide-react";
 import { AppGate } from "@/components/planner/AppGate";
 import { BottomNav } from "@/components/planner/BottomNav";
 import { usePlanner } from "@/lib/planner/store";
@@ -31,10 +31,10 @@ function InicioSimple() {
         </header>
         <section className="grid gap-3">
           <Link to="/calendario" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><CalendarDays className="h-6 w-6" /></span><div className="min-w-0"><h2 className="text-xl font-bold">{t("Agenda")}</h2><p className="text-sm text-muted-foreground">{t("Día, semana y fechas importantes")}</p></div></Link>
-          <Link to="/notas" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-plum-soft text-plum"><NotebookPen className="h-6 w-6" /></span><div className="min-w-0"><h2 className="text-xl font-bold">{t("Notas")}</h2><p className="text-sm text-muted-foreground">{t("Escribí, pegá imágenes, stickers o dibujá")}</p></div></Link>
+          <Link to="/notas" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-plum-soft text-plum"><NotebookPen className="h-6 w-6" /></span><div className="min-w-0"><h2 className="text-xl font-bold">{t("Notas")}</h2><p className="text-sm text-muted-foreground">{t("Notas rápidas y notas con fecha")}</p></div></Link>
+          <Link to="/cuaderno" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-terra-soft text-terra"><BookOpen className="h-6 w-6" /></span><div className="min-w-0"><h2 className="text-xl font-bold">{t("Cuaderno")}</h2><p className="text-sm text-muted-foreground">{t("Hojas libres para apuntes, dibujos e ideas")}</p></div></Link>
           <Link to="/tareas" className="card-soft flex items-center gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sun-soft text-sun"><ListChecks className="h-6 w-6" /></span><div className="min-w-0 flex-1"><h2 className="text-xl font-bold">{t("Tareas")}</h2><p className="text-sm text-muted-foreground">{pending ? (lang === "en" ? `${pending} pending` : `${pending} pendientes`) : t("Sin pendientes")}</p></div></Link>
         </section>
-
       </main><BottomNav />
     </div>
   );

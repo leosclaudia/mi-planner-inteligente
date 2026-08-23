@@ -40,6 +40,9 @@ function NotasPage(){
  },[]);
  useEffect(()=>{localStorage.setItem("planner-ink-color",inkColor)},[inkColor]);
  useEffect(()=>{localStorage.setItem("planner-ink-width",String(inkWidth))},[inkWidth]);
+ useEffect(()=>{
+  window.dispatchEvent(new CustomEvent("planner:flex-ink-settings",{detail:{tool:inkTool,color:inkColor,width:inkWidth}}));
+ },[inkTool,inkColor,inkWidth]);
  useEffect(()=>{const next={hoy:localStorage.getItem("planner-box-background-hoy")||"#FFFFFF",libre:localStorage.getItem("planner-box-background-libre")||"#FFFFFF"};setBackgrounds(next);BOXES.forEach(({id})=>{const el=refs.current[id];if(el){el.innerHTML=localStorage.getItem(storageKey(id))??"";upgradeImages(el);ensureRootHeight(el);localStorage.setItem(storageKey(id),el.innerHTML)}})},[]);
  useEffect(()=>{const onTouchStart=(e:TouchEvent)=>{const t=e.target as HTMLElement;if(t.closest(".planner-free-image, .planner-flex-free-image"))e.preventDefault()};document.addEventListener("touchstart",onTouchStart,{passive:false});return()=>document.removeEventListener("touchstart",onTouchStart)},[]);
  useEffect(()=>{

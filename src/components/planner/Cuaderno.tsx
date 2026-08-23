@@ -63,10 +63,11 @@ export function Cuaderno() {
   const [inkWidth, setInkWidth] = useState(4);
   const [toolPanelOpen, setToolPanelOpen] = useState(false);
   const [toolOptions, setToolOptions] = useState<null | "text" | "paper" | "pencil" | "eraser">(null);
-  const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align">(null);
+  const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align" | "color" | "highlight">(null);
   const [textFont, setTextFont] = useState("Arial");
   const [textPx, setTextPx] = useState("16px");
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right" | "justify">("left");
+  const [inkRecognizing, setInkRecognizing] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
@@ -228,6 +229,60 @@ export function Cuaderno() {
     saveInk();
   };
 
+  const prepareInkOcr = (source: HTMLCanvasElement) => {
+    const ctx = source.getContext("2d");
+    if (!ctx) return null;
+    const im = ctx.getImageData(0, 0, source.width, source.height);
+    let minX=source.width,minY=source.height,maxX=-1,maxY=-1;
+    for(let y=0;y<source.height;y++) for(let x=0;x<source.width;x++){
+      if(im.data[(y*source.width+x)*4+3]>20){
+        minX=Math.min(minX,x); maxX=Math.max(maxX,x);
+        minY=Math.min(minY,y); maxY=Math.max(maxY,y);
+      }
+    }
+    if(maxX<0) return null;
+    const m=30;
+    minX=Math.max(0,minX-m); minY=Math.max(0,minY-m);
+    maxX=Math.min(source.width-1,maxX+m); maxY=Math.min(source.height-1,maxY+m);
+    const w=maxX-minX+1,h=maxY-minY+1;
+    const out=document.createElement("canvas");
+    out.width=w; out.height=h;
+    const ox=out.getContext("2d")!;
+    ox.fillStyle="#fff"; ox.fillRect(0,0,w,h);
+    ox.drawImage(source,minX,minY,w,h,0,0,w,h);
+    return out;
+  };
+
+  const convertInkToText = async () => {
+    const canvas=canvasRef.current;
+    const editor=editorRef.current;
+    if(!canvas || !editor) return;
+    const prepared=prepareInkOcr(canvas);
+    if(!prepared){ alert("Primero escribí algo con el lápiz."); return; }
+    setInkRecognizing(true);
+    try{
+      const mod=await import(/* @vite-ignore */ "https://cdn.jsdelivr.net/npm/tesseract.js@6/+esm");
+      const worker=await mod.createWorker("spa");
+      const res=await worker.recognize(prepared.toDataURL("image/png"));
+      await worker.terminate();
+      const txt=String(res?.data?.text||"").replace(/\s+/g," ").trim();
+      if(!txt){ alert("No pude reconocer la escritura. Probá con letras un poco más separadas."); return; }
+      editor.focus({preventScroll:true});
+      const spacer=editor.innerText.trim() ? " " : "";
+      editor.append(document.createTextNode(spacer+txt));
+      patch({html:editor.innerHTML, ink:""});
+      const ctx=canvas.getContext("2d");
+      ctx?.clearRect(0,0,canvas.width,canvas.height);
+      setTool("texto");
+      setToolOptions("text");
+    }catch(err){
+      console.warn(err);
+      alert("No se pudo convertir ahora. Revisá la conexión e intentá nuevamente.");
+    }finally{
+      setInkRecognizing(false);
+    }
+  };
+
   const saveText = () => {
     if (editorRef.current) patch({ html: editorRef.current.innerHTML });
   };
@@ -348,7 +403,7 @@ export function Cuaderno() {
                         className="inline-flex items-center gap-1.5 rounded-xl border bg-background px-2.5 py-2 text-xs font-semibold"><BookOpen className="h-4 w-4"/>Hoja</button>
                       <button type="button" onClick={() => { setTool("lapiz"); setToolOptions(toolOptions==="pencil"?null:"pencil"); }}
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="lapiz"?"bg-[#f7e5df]":"bg-background"}`}><Pencil className="h-4 w-4"/>Lápiz</button>
-                      <button type="button" onClick={() => { setTool("goma"); setToolOptions(toolOptions==="eraser"?null:"eraser"); }}
+                      <button type="button" onClick={() => { setTool("goma"); setToolOptions(null); }}
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="goma"?"bg-[#f7e5df]":"bg-background"}`}><Eraser className="h-4 w-4"/>Goma</button>
                     </div>
                     {toolOptions === "text" && (
@@ -387,13 +442,31 @@ export function Cuaderno() {
                             </div>}
                           </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
-                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-6 cursor-pointer rounded-full border-0 bg-transparent p-0 [appearance:none] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"/>
-                          </label>
-                          <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
-                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-6 cursor-pointer rounded-full border-0 bg-transparent p-0 [appearance:none] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"/>
-                          </label>
+                        <div className="flex items-center gap-1">
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="color"?null:"color")}
+                              className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Color de texto">
+                              <span className="text-xs font-bold underline decoration-2 underline-offset-2">A</span>
+                            </button>
+                            {textMenu==="color" && <div className="absolute bottom-10 left-0 z-[70] flex w-44 flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-xl">
+                              {["#2F2926","#9B5C68","#C97962","#D59B54","#6F668F","#5F8294","#7B9B86","#A9789C"].map(c=>
+                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("foreColor",c);setTextMenu(null);}}
+                                  className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Color ${c}`}/>)}
+                            </div>}
+                          </div>
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="highlight"?null:"highlight")}
+                              className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Resaltador">
+                              <Highlighter className="h-4 w-4"/>
+                            </button>
+                            {textMenu==="highlight" && <div className="absolute bottom-10 left-0 z-[70] flex w-48 flex-wrap items-center gap-2 rounded-2xl border bg-card p-2 shadow-xl">
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor","transparent");setTextMenu(null);}}
+                                className="grid h-7 w-7 place-items-center rounded-full border bg-white text-[11px]" title="Sin resaltado">⊘</button>
+                              {["#FFF3A3","#FFD9A0","#FFB3C1","#C9F2C7","#B8E3FF","#E3D1FF"].map(c=>
+                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor",c);setTextMenu(null);}}
+                                  className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Resaltado ${c}`}/>)}
+                            </div>}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -419,9 +492,13 @@ export function Cuaderno() {
                             className={`grid h-7 w-7 place-items-center rounded-full border ${inkWidth===v?"bg-[#f7e5df]":"bg-card"}`}>
                             <span className="rounded-full bg-foreground" style={{width:Math.max(3,Math.min(10,v)),height:Math.max(3,Math.min(10,v))}}/></button>)}
                         </div>
+                        <button type="button" onClick={convertInkToText} disabled={inkRecognizing}
+                          className="mt-2 w-full rounded-full border bg-card px-3 py-1.5 text-[11px] font-semibold hover:bg-accent disabled:opacity-60">
+                          {inkRecognizing ? "Reconociendo…" : "Convertir a texto"}
+                        </button>
                       </div>
                     )}
-                    {toolOptions === "eraser" && <div className="mt-2 rounded-xl border bg-background/80 p-2 text-[11px] text-muted-foreground">Goma activa.</div>}
+                    
                   </div>
                 )}
                 <button type="button" onClick={() => {setToolPanelOpen(v=>!v); if(toolPanelOpen)setToolOptions(null);}}
@@ -441,7 +518,7 @@ export function Cuaderno() {
               <canvas
                 ref={canvasRef}
                 className="absolute inset-0 z-20 touch-none"
-                style={{ pointerEvents: tool === "texto" ? "none" : "auto", cursor: tool === "goma" ? "cell" : "crosshair" }}
+                style={{ pointerEvents: tool === "texto" ? "none" : "auto", cursor: "crosshair" }}
                 onPointerDown={startInk}
                 onPointerMove={moveInk}
                 onPointerUp={endInk}

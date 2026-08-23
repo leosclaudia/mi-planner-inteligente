@@ -272,8 +272,12 @@ export function FlexibleNotes(){
  const saveDom=(id:string,root:HTMLElement)=>{fitNoteHeight(root);const text=root.querySelector<HTMLElement>(".planner-flex-text")?.innerHTML||"";const images=Array.from(root.querySelectorAll<HTMLElement>(".planner-flex-free-image")).map(x=>{const clone=x.cloneNode(true) as HTMLElement;clone.dataset.selected="false";return clone.outerHTML}).join("");patch(id,{html:text+images})};
  useEffect(()=>{
   const onInk=(ev:Event)=>{const d=(ev as CustomEvent<FlexInkSettings>).detail;if(d?.tool)setFlexInk(d)};
+  const onOcrRequest=()=>{const id=activeNoteRef.current;if(!id)return;const c=inkCanvasRefs.current[id];if(!c)return;window.dispatchEvent(new CustomEvent("planner:flex-ink-ocr-source",{detail:{noteId:id,dataUrl:c.toDataURL("image/png")}}))};
+  const onOcrCommit=(ev:Event)=>{const d=(ev as CustomEvent<{noteId:string;text:string}>).detail;if(!d?.noteId||!d.text)return;const body=document.querySelector<HTMLElement>(`[data-flex-note-body="${d.noteId}"]`),textEl=body?.querySelector<HTMLElement>(".planner-flex-text");if(!body||!textEl)return;pushHistory(d.noteId,body);const spacer=(textEl.innerText||"").trim()?" ":"";textEl.append(document.createTextNode(spacer+d.text));saveDom(d.noteId,body);const c=inkCanvasRefs.current[d.noteId];if(c){c.getContext("2d")?.clearRect(0,0,c.width,c.height);localStorage.removeItem(flexInkKey(d.noteId))}markActive(d.noteId)};
   window.addEventListener("planner:flex-ink-settings",onInk as EventListener);
-  return()=>window.removeEventListener("planner:flex-ink-settings",onInk as EventListener);
+  window.addEventListener("planner:flex-ink-ocr-request",onOcrRequest);
+  window.addEventListener("planner:flex-ink-ocr-commit",onOcrCommit as EventListener);
+  return()=>{window.removeEventListener("planner:flex-ink-settings",onInk as EventListener);window.removeEventListener("planner:flex-ink-ocr-request",onOcrRequest);window.removeEventListener("planner:flex-ink-ocr-commit",onOcrCommit as EventListener)};
  },[]);
  const sizeFlexInkCanvas=(id:string,c:HTMLCanvasElement|null)=>{
   if(!c)return;inkCanvasRefs.current[id]=c;

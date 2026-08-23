@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, List, Pencil, Rows3, Trash2, X } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, List, MoreHorizontal, Pencil, Rows3, Trash2, X } from "lucide-react";
 
 type PaperType = "liso" | "rayado" | "cuadricula" | "punteado";
 
@@ -61,6 +61,7 @@ export function Cuaderno() {
   const [tool, setTool] = useState<"texto" | "lapiz" | "goma">("texto");
   const [inkColor, setInkColor] = useState("#65475F");
   const [inkWidth, setInkWidth] = useState(4);
+  const [openMenu, setOpenMenu] = useState<null | "paper" | "pencil" | "eraser" | "more">(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
@@ -274,52 +275,88 @@ export function Cuaderno() {
               <button type="button" onClick={() => setOpenId(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-card shadow-sm transition hover:bg-accent" title="Cerrar"><X className="h-5 w-5"/></button>
             </div>
 
-            <div className="mx-auto mt-2 flex max-w-[1180px] flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm">
-              <span className="px-1 text-xs font-semibold text-muted-foreground">Tipo de hoja</span>
-              {([
-                ["liso", "Liso", List],
-                ["rayado", "Rayado", Rows3],
-                ["cuadricula", "Cuadrícula", Grid3X3],
-                ["punteado", "Punteado", BookOpen],
-              ] as const).map(([value, label, Icon]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => patch({ paper: value })}
-                  aria-pressed={current.paper === value}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold shadow-sm transition ${
-                    current.paper === value
-                      ? "border-[#d9b7a8] bg-[#f7e5df] text-foreground ring-2 ring-[#f2ddd4]"
-                      : "border-border bg-background text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5"/>
-                  {label}
-                </button>
-              ))}
-            </div>
           </header>
 
-          <div className="flex flex-wrap items-center gap-1.5 border-b bg-background/95 p-2">
-            <button type="button" onClick={() => setTool("texto")} className={`rounded-full border px-3 py-2 text-sm ${tool==="texto"?"bg-accent font-semibold":""}`}>T Texto</button>
-            <button type="button" onClick={() => setTool("lapiz")} className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-sm ${tool==="lapiz"?"bg-accent font-semibold":""}`}><Pencil className="h-4 w-4"/>Lápiz</button>
-            <button type="button" onClick={() => setTool("goma")} className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-sm ${tool==="goma"?"bg-accent font-semibold":""}`}><Eraser className="h-4 w-4"/>Goma</button>
-            <label className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-card"><span className="h-5 w-5 rounded-full border" style={{backgroundColor:inkColor}}/><input type="color" value={inkColor} onChange={e=>setInkColor(e.target.value)} className="absolute inset-0 opacity-0"/></label>
-            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1 shadow-sm" aria-label="Grosor del lápiz">
-              {[2,4,6,8,10,12].map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setInkWidth(v)}
-                  title={`Grosor ${v}`}
-                  aria-pressed={inkWidth === v}
-                  className={`grid h-7 w-7 place-items-center rounded-full transition ${inkWidth === v ? "bg-[#f7e5df] ring-1 ring-[#d9b7a8]" : "hover:bg-accent"}`}
-                >
-                  <span className="rounded-full bg-foreground" style={{ width: Math.max(3, Math.min(11, v)), height: Math.max(3, Math.min(11, v)) }}/>
-                </button>
-              ))}
+          <div className="relative border-b bg-background/95 px-2 py-1.5">
+            <div className="mx-auto flex max-w-[1180px] items-center gap-1.5 overflow-x-auto">
+              <button type="button" onClick={() => setOpenMenu(openMenu === "paper" ? null : "paper")}
+                className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold shadow-sm ${openMenu==="paper"?"bg-[#f7e5df]": "bg-card"}`}>
+                {current.paper === "liso" ? "Liso" : current.paper === "rayado" ? "Rayado" : current.paper === "cuadricula" ? "Cuadrícula" : "Punteado"}
+              </button>
+
+              <button type="button" onClick={() => { setTool("texto"); setOpenMenu(null); }}
+                className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold shadow-sm ${tool==="texto"?"bg-[#f3e4f2]": "bg-card"}`}>
+                T Texto
+              </button>
+
+              <button type="button" onClick={() => { setTool("lapiz"); setOpenMenu(openMenu === "pencil" ? null : "pencil"); }}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-2 text-xs font-semibold shadow-sm ${tool==="lapiz"?"bg-[#f7e5df]": "bg-card"}`}>
+                <Pencil className="h-3.5 w-3.5"/>Lápiz
+              </button>
+
+              <button type="button" onClick={() => { setTool("goma"); setOpenMenu(openMenu === "eraser" ? null : "eraser"); }}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-2 text-xs font-semibold shadow-sm ${tool==="goma"?"bg-[#f7e5df]": "bg-card"}`}>
+                <Eraser className="h-3.5 w-3.5"/>Goma
+              </button>
+
+              <button type="button" onClick={() => setOpenMenu(openMenu === "more" ? null : "more")}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border bg-card shadow-sm" title="Más herramientas">
+                <MoreHorizontal className="h-4 w-4"/>
+              </button>
+
+              <span className="ml-auto shrink-0 px-1 text-[10px] text-muted-foreground">Guardado automático</span>
             </div>
-            <span className="ml-auto text-xs text-muted-foreground">Guardado automático</span>
+
+            {openMenu && (
+              <div className="absolute left-2 right-2 top-[calc(100%+4px)] z-50 mx-auto max-w-[760px] rounded-2xl border border-border bg-card p-2 shadow-lg">
+                {openMenu === "paper" && (
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      ["liso", "Liso", List],
+                      ["rayado", "Rayado", Rows3],
+                      ["cuadricula", "Cuadrícula", Grid3X3],
+                      ["punteado", "Punteado", BookOpen],
+                    ] as const).map(([value, label, Icon]) => (
+                      <button key={value} type="button" onClick={() => { patch({ paper: value }); setOpenMenu(null); }}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold ${current.paper===value?"bg-[#f7e5df] ring-1 ring-[#d9b7a8]":"bg-background"}`}>
+                        <Icon className="h-3.5 w-3.5"/>{label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {openMenu === "pencil" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Color</span>
+                    <label className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-background">
+                      <span className="h-5 w-5 rounded-full border" style={{backgroundColor:inkColor}}/>
+                      <input type="color" value={inkColor} onChange={e=>setInkColor(e.target.value)} onBlur={()=>setOpenMenu(null)} className="absolute inset-0 opacity-0"/>
+                    </label>
+                    <span className="ml-1 text-xs font-semibold text-muted-foreground">Grosor</span>
+                    {[2,4,6,8,10,12].map(v => (
+                      <button key={v} type="button" onClick={() => { setInkWidth(v); setOpenMenu(null); }}
+                        className={`grid h-8 w-8 place-items-center rounded-full border ${inkWidth===v?"bg-[#f7e5df] ring-1 ring-[#d9b7a8]":"bg-background"}`}>
+                        <span className="rounded-full bg-foreground" style={{width:Math.max(3,Math.min(11,v)),height:Math.max(3,Math.min(11,v))}}/>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {openMenu === "eraser" && (
+                  <div className="flex items-center gap-2">
+                    <Eraser className="h-4 w-4"/>
+                    <span className="text-xs font-semibold">Goma activa</span>
+                    <span className="text-xs text-muted-foreground">Dibujá sobre el trazo para borrarlo.</span>
+                  </div>
+                )}
+
+                {openMenu === "more" && (
+                  <div className="text-xs text-muted-foreground">
+                    Acá agregaremos Imagen, Stickers y las demás herramientas sin llenar la pantalla.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <main className="flex-1 overflow-auto p-2 sm:p-4">

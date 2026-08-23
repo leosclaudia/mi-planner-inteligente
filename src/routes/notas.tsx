@@ -105,7 +105,28 @@ function NotasPage(){
  const redoActive=()=>{if(document.body.dataset.activeFlexNoteId){window.dispatchEvent(new CustomEvent("planner:flex-history",{detail:{action:"redo"}}));return}redoText(active)};
  useEffect(()=>{const h=(ev:Event)=>{const e=ev as CustomEvent<{color?:string}>;if(e.detail?.color){setSampledColor(e.detail.color);localStorage.setItem("planner-sampled-text-color",e.detail.color)}};window.addEventListener("planner:sampled-color",h as EventListener);return()=>window.removeEventListener("planner:sampled-color",h as EventListener)},[]);
  const prepareInkOcr=(source:HTMLCanvasElement)=>{const ctx=source.getContext("2d");if(!ctx)return null;const im=ctx.getImageData(0,0,source.width,source.height);let minX=source.width,minY=source.height,maxX=-1,maxY=-1;for(let y=0;y<source.height;y++)for(let x=0;x<source.width;x++){if(im.data[(y*source.width+x)*4+3]>20){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)}}if(maxX<0)return null;const m=30;minX=Math.max(0,minX-m);minY=Math.max(0,minY-m);maxX=Math.min(source.width-1,maxX+m);maxY=Math.min(source.height-1,maxY+m);const w=maxX-minX+1,h=maxY-minY+1,o=document.createElement("canvas");o.width=w;o.height=h;const ox=o.getContext("2d")!;ox.fillStyle="#fff";ox.fillRect(0,0,w,h);ox.drawImage(source,minX,minY,w,h,0,0,w,h);return o};
- const convertInkToText=async()=>{const c=inkCanvasRefs.current[active];if(!c)return;const prepared=prepareInkOcr(c);if(!prepared){alert("Primero escribí algo con el lápiz.");return}setInkRecognizing(true);try{const mod=await import(/* @vite-ignore */ "https://cdn.jsdelivr.net/npm/tesseract.js@6/+esm");const worker=await mod.createWorker("spa");const res=await worker.recognize(prepared.toDataURL("image/png"));await worker.terminate();const txt=String(res?.data?.text||"").replace(/\s+/g," ").trim();if(!txt){alert("No pude reconocer la escritura. Probá con letras un poco más separadas.");return}const root=refs.current[active];if(root){pushTextUndo(active);root.focus({preventScroll:true});root.append(document.createTextNode((root.innerText.trim()?" ":"")+txt));save(active)}clearInk(active);inkUndoRef.current[active]=[];inkRedoRef.current[active]=[];setInkTool("off");setInkMore(false);setMiniMenu(null);setPanel(null)}catch(err){console.warn(err);alert("No se pudo convertir ahora. Revisá la conexión e intentá nuevamente.")}finally{setInkRecognizing(false)}};
+ const recognizeInkDataUrl=async(dataUrl:string)=>{const img=new Image();await new Promise<void>((resolve,reject)=>{img.onload=()=>resolve();img.onerror=()=>reject(new Error("No se pudo leer el manuscrito"));img.src=dataUrl});const c=document.createElement("canvas");c.width=img.naturalWidth||img.width;c.height=img.naturalHeight||img.height;c.getContext("2d")?.drawImage(img,0,0);const prepared=prepareInkOcr(c);if(!prepared)return "";const mod=await import(/* @vite-ignore */ "https://cdn.jsdelivr.net/npm/tesseract.js@6/+esm");const worker=await mod.createWorker("spa");const res=await worker.recognize(prepared.toDataURL("image/png"));await worker.terminate();return String(res?.data?.text||"").replace(/\s+/g," ").trim()};
+ const convertInkToText=async()=>{
+  const flexId=document.body.dataset.activeFlexNoteId;
+  if(flexId){
+   setInkRecognizing(true);
+   try{
+    const source=await new Promise<{noteId:string;dataUrl:string}|null>(resolve=>{
+     let done=false;const h=(ev:Event)=>{const d=(ev as CustomEvent<{noteId:string;dataUrl:string}>).detail;if(!d||d.noteId!==flexId)return;done=true;window.removeEventListener("planner:flex-ink-ocr-source",h as EventListener);resolve(d)};
+     window.addEventListener("planner:flex-ink-ocr-source",h as EventListener);
+     window.dispatchEvent(new CustomEvent("planner:flex-ink-ocr-request"));
+     setTimeout(()=>{if(!done){window.removeEventListener("planner:flex-ink-ocr-source",h as EventListener);resolve(null)}},250);
+    });
+    if(!source){alert("Primero escribí algo con el lápiz.");return}
+    const txt=await recognizeInkDataUrl(source.dataUrl);
+    if(!txt){alert("No pude reconocer la escritura. Probá con letras un poco más separadas.");return}
+    window.dispatchEvent(new CustomEvent("planner:flex-ink-ocr-commit",{detail:{noteId:flexId,text:txt}}));
+    setInkTool("off");setInkMore(false);setMiniMenu(null);setPanel(null);
+   }catch(err){console.warn(err);alert("No se pudo convertir ahora. Revisá la conexión e intentá nuevamente.")}finally{setInkRecognizing(false)}
+   return;
+  }
+  const c=inkCanvasRefs.current[active];if(!c)return;const prepared=prepareInkOcr(c);if(!prepared){alert("Primero escribí algo con el lápiz.");return}setInkRecognizing(true);try{const mod=await import(/* @vite-ignore */ "https://cdn.jsdelivr.net/npm/tesseract.js@6/+esm");const worker=await mod.createWorker("spa");const res=await worker.recognize(prepared.toDataURL("image/png"));await worker.terminate();const txt=String(res?.data?.text||"").replace(/\s+/g," ").trim();if(!txt){alert("No pude reconocer la escritura. Probá con letras un poco más separadas.");return}const root=refs.current[active];if(root){pushTextUndo(active);root.focus({preventScroll:true});root.append(document.createTextNode((root.innerText.trim()?" ":"")+txt));save(active)}clearInk(active);inkUndoRef.current[active]=[];inkRedoRef.current[active]=[];setInkTool("off");setInkMore(false);setMiniMenu(null);setPanel(null)}catch(err){console.warn(err);alert("No se pudo convertir ahora. Revisá la conexión e intentá nuevamente.")}finally{setInkRecognizing(false)}
+ };
  const syncSelectedTextFormat=()=>{
  const s=window.getSelection();if(!s||!s.rangeCount)return;
  const r=s.getRangeAt(0);if(r.collapsed)return;

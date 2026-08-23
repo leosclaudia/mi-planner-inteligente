@@ -338,50 +338,40 @@ export function Cuaderno() {
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                      <button type="button" onClick={() => { setTool("texto"); setToolOptions(toolOptions==="text"?null:"text"); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="texto"?"bg-[#f3e4f2]":"bg-background"}`}><Type className="h-4 w-4"/>Texto</button>
-                      <button type="button" onClick={() => setToolOptions(toolOptions==="paper"?null:"paper")}
-                        className="inline-flex items-center gap-1.5 rounded-xl border bg-background px-2.5 py-2 text-xs font-semibold"><BookOpen className="h-4 w-4"/>Hoja</button>
-                      <button type="button" onClick={() => { setTool("lapiz"); setToolOptions(toolOptions==="pencil"?null:"pencil"); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="lapiz"?"bg-[#f7e5df]":"bg-background"}`}><Pencil className="h-4 w-4"/>Lápiz</button>
-                      <button type="button" onClick={() => { setTool("goma"); setToolOptions(toolOptions==="eraser"?null:"eraser"); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="goma"?"bg-[#f7e5df]":"bg-background"}`}><Eraser className="h-4 w-4"/>Goma</button>
-                    </div>
-                    {toolOptions === "text" && (
-                      <div className="mt-2 space-y-2 rounded-xl border bg-background/90 p-2">
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <select defaultValue="Arial" onMouseDown={rememberSelection} onChange={e=>formatText("fontName",e.target.value)}
-                            className="h-9 min-w-0 rounded-full border bg-card px-3 text-[11px] outline-none" aria-label="Fuente">
-                            <option value="Arial" style={{fontFamily:'Arial'}}>Arial</option>
-                            <option value="Verdana" style={{fontFamily:'Verdana'}}>Verdana</option>
-                            <option value="Tahoma" style={{fontFamily:'Tahoma'}}>Tahoma</option>
-                            <option value="Trebuchet MS" style={{fontFamily:'Trebuchet MS'}}>Trebuchet MS</option>
-                            <option value="Georgia" style={{fontFamily:'Georgia'}}>Georgia</option>
-                            <option value="Times New Roman" style={{fontFamily:'Times New Roman'}}>Times New Roman</option>
-                            <option value="Courier New" style={{fontFamily:'Courier New'}}>Courier New</option>
-                            <option value="Comic Sans MS" style={{fontFamily:'Comic Sans MS'}}>Comic Sans MS</option>
-                            <option value="Segoe UI" style={{fontFamily:'Segoe UI'}}>Segoe UI</option>
-                            <option value="Calibri" style={{fontFamily:'Calibri'}}>Calibri</option>
-                            <option value="Garamond" style={{fontFamily:'Garamond'}}>Garamond</option>
-                            <option value="Helvetica" style={{fontFamily:'Helvetica'}}>Helvetica</option>
-                            <option value="Palatino" style={{fontFamily:'Palatino'}}>Palatino</option>
-                            <option value="Lora" style={{fontFamily:'Lora'}}>Lora</option>
-                            <option value="Century Gothic" style={{fontFamily:'Century Gothic'}}>Century Gothic</option>
-                            <option value="Lucida Sans" style={{fontFamily:'Lucida Sans'}}>Lucida Sans</option>
-                            <option value="Lucida Console" style={{fontFamily:'Lucida Console'}}>Lucida Console</option>
-                            <option value="Book Antiqua" style={{fontFamily:'Book Antiqua'}}>Book Antiqua</option>
-                            <option value="Impact" style={{fontFamily:'Impact'}}>Impact</option>
-                            <option value="Consolas" style={{fontFamily:'Consolas'}}>Consolas</option>
-                            <option value="Franklin Gothic Medium" style={{fontFamily:'Franklin Gothic Medium'}}>Franklin Gothic Medium</option>
-                            <option value="Rockwell" style={{fontFamily:'Rockwell'}}>Rockwell</option>
-                            <option value="Baskerville" style={{fontFamily:'Baskerville'}}>Baskerville</option>
-                            <option value="Cambria" style={{fontFamily:'Cambria'}}>Cambria</option>
-                            <option value="Candara" style={{fontFamily:'Candara'}}>Candara</option>
-                          </select>
-                          <select defaultValue="16px" onMouseDown={rememberSelection} onChange={e=>setTextSize(e.target.value)}
-                            className="h-9 min-w-0 rounded-full border bg-card px-3 text-[11px] outline-none" aria-label="Tamaño">
-<option value="8px">8</option><option value="10px">10</option><option value="12px">12</option><option value="14px">14</option><option value="16px">16</option><option value="18px">18</option><option value="20px">20</option><option value="22px">22</option><option value="24px">24</option><option value="28px">28</option><option value="30px">30</option><option value="32px">32</option><option value="34px">34</option><option value="36px">36</option><option value="38px">38</option><option value="40px">40</option><option value="42px">42</option><option value="44px">44</option><option value="46px">46</option><option value="48px">48</option>
-                          </select>
+                          <div className="group relative">
+                            <button type="button" onMouseDown={rememberSelection}
+                              className="flex h-9 w-full items-center justify-between rounded-full border bg-card px-3 text-[11px] shadow-sm">
+                              <span>Fuente</span><span className="text-[9px]">⌄</span>
+                            </button>
+                            <div className="invisible absolute right-0 top-10 z-50 max-h-56 w-44 translate-y-1 overflow-y-auto rounded-2xl border bg-card p-1.5 opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                              {["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Lora","Century Gothic","Lucida Sans","Lucida Console","Book Antiqua","Impact","Consolas","Franklin Gothic Medium","Rockwell","Baskerville","Cambria","Candara"].map(font => (
+                                <button key={font} type="button"
+                                  onMouseDown={e=>{e.preventDefault();rememberSelection();}}
+                                  onClick={()=>formatText("fontName",font)}
+                                  style={{fontFamily:font}}
+                                  className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7] focus:bg-[#f7ece7]">
+                                  {font}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="group relative">
+                            <button type="button" onMouseDown={rememberSelection}
+                              className="flex h-9 w-full items-center justify-between rounded-full border bg-card px-3 text-[11px] shadow-sm">
+                              <span>Tamaño</span><span className="text-[9px]">⌄</span>
+                            </button>
+                            <div className="invisible absolute right-0 top-10 z-50 max-h-56 w-24 translate-y-1 overflow-y-auto rounded-2xl border bg-card p-1.5 opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => (
+                                <button key={size} type="button"
+                                  onMouseDown={e=>{e.preventDefault();rememberSelection();}}
+                                  onClick={()=>setTextSize(`${size}px`)}
+                                  className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7] focus:bg-[#f7ece7]">
+                                  {size} px
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>

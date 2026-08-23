@@ -364,10 +364,10 @@ export function Cuaderno() {
                           </div>
                           <div className="relative">
                             <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="size"?null:"size")} className="flex h-8 w-full items-center justify-between rounded-full border bg-card px-2.5 text-[11px] shadow-sm">
-                              <span>{textPx.replace("px","")} px</span><span>⌄</span>
+                              <span>{textPx.replace("px","")}</span><span>⌄</span>
                             </button>
                             {textMenu==="size" && <div className="absolute right-0 top-9 z-[70] max-h-52 w-24 overflow-y-auto rounded-2xl border bg-card p-1.5 shadow-xl">
-                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => <button key={size} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{const px=`${size}px`;setTextPx(px);setTextSize(px);setTextMenu(null);}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{size} px</button>)}
+                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => <button key={size} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={(e)=>{const px=`${size}px`;setTextPx(px);setTextSize(px);setTextMenu(null);e.currentTarget.blur();}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{size}</button>)}
                             </div>}
                           </div>
                         </div>
@@ -389,10 +389,10 @@ export function Cuaderno() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
-                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"/>
+                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-6 cursor-pointer rounded-full border-0 bg-transparent p-0 [appearance:none] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"/>
                           </label>
                           <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
-                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"/>
+                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-6 cursor-pointer rounded-full border-0 bg-transparent p-0 [appearance:none] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"/>
                           </label>
                         </div>
                       </div>

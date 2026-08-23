@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, List, PanelRightClose, PanelRightOpen, Pencil, Rows3, Trash2, Type, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, Highlighter, Italic, List, PanelRightClose, PanelRightOpen, Pencil, Rows3, Trash2, Type, Underline, X } from "lucide-react";
 
 type PaperType = "liso" | "rayado" | "cuadricula" | "punteado";
 
@@ -62,11 +62,28 @@ export function Cuaderno() {
   const [inkColor, setInkColor] = useState("#65475F");
   const [inkWidth, setInkWidth] = useState(4);
   const [toolPanelOpen, setToolPanelOpen] = useState(false);
-  const [toolOptions, setToolOptions] = useState<null | "paper" | "pencil" | "eraser">(null);
+  const [toolOptions, setToolOptions] = useState<null | "text" | "paper" | "pencil" | "eraser">(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
+  const savedRange = useRef<Range | null>(null);
+
+  const rememberSelection = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editorRef.current) return;
+    const range = sel.getRangeAt(0);
+    if (editorRef.current.contains(range.commonAncestorContainer)) {
+      savedRange.current = range.cloneRange();
+    }
+  };
+
+  const restoreSelection = () => {
+    const sel = window.getSelection();
+    if (!sel || !savedRange.current) return;
+    sel.removeAllRanges();
+    sel.addRange(savedRange.current);
+  };
 
   useEffect(() => {
     try {
@@ -207,6 +224,33 @@ export function Cuaderno() {
     saveInk();
   };
 
+  const saveText = () => {
+    if (editorRef.current) patch({ html: editorRef.current.innerHTML });
+  };
+
+  const formatText = (command: string, value?: string) => {
+    setTool("texto");
+    editorRef.current?.focus();
+    restoreSelection();
+    document.execCommand(command, false, value);
+    rememberSelection();
+    saveText();
+  };
+
+  const setTextSize = (px: string) => {
+    setTool("texto");
+    editorRef.current?.focus();
+    restoreSelection();
+    document.execCommand("fontSize", false, "7");
+    editorRef.current?.querySelectorAll('font[size="7"]').forEach(node => {
+      const el = node as HTMLElement;
+      el.removeAttribute("size");
+      el.style.fontSize = px;
+    });
+    rememberSelection();
+    saveText();
+  };
+
   return (
     <section className="rounded-[1.4rem] border border-border bg-card/70 p-3 shadow-sm">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -294,7 +338,7 @@ export function Cuaderno() {
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                      <button type="button" onClick={() => { setTool("texto"); setToolOptions(null); setToolPanelOpen(false); }}
+                      <button type="button" onClick={() => { setTool("texto"); setToolOptions(toolOptions==="text"?null:"text"); }}
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="texto"?"bg-[#f3e4f2]":"bg-background"}`}><Type className="h-4 w-4"/>Texto</button>
                       <button type="button" onClick={() => setToolOptions(toolOptions==="paper"?null:"paper")}
                         className="inline-flex items-center gap-1.5 rounded-xl border bg-background px-2.5 py-2 text-xs font-semibold"><BookOpen className="h-4 w-4"/>Hoja</button>
@@ -303,6 +347,42 @@ export function Cuaderno() {
                       <button type="button" onClick={() => { setTool("goma"); setToolOptions(toolOptions==="eraser"?null:"eraser"); }}
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="goma"?"bg-[#f7e5df]":"bg-background"}`}><Eraser className="h-4 w-4"/>Goma</button>
                     </div>
+                    {toolOptions === "text" && (
+                      <div className="mt-2 space-y-2 rounded-xl border bg-background/90 p-2">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <select defaultValue="Arial" onMouseDown={rememberSelection} onChange={e=>formatText("fontName",e.target.value)}
+                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Fuente">
+                            <option value="Arial">Arial</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Lora">Lora</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Courier New">Courier</option>
+                          </select>
+                          <select defaultValue="16px" onMouseDown={rememberSelection} onChange={e=>setTextSize(e.target.value)}
+                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Tamaño">
+                            <option value="12px">12</option><option value="14px">14</option><option value="16px">16</option>
+                            <option value="18px">18</option><option value="22px">22</option><option value="28px">28</option><option value="36px">36</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("italic")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("underline")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyLeft")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Izquierda"><AlignLeft className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyCenter")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Centrar"><AlignCenter className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyRight")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Derecha"><AlignRight className="h-4 w-4"/></button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
+                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          </label>
+                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
+                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
                     {toolOptions === "paper" && (
                       <div className="mt-2 grid gap-1 rounded-xl border bg-background/80 p-1.5">
                         {([["liso","Liso",List],["rayado","Rayado",Rows3],["cuadricula","Cuadrícula",Grid3X3],["punteado","Punteado",BookOpen]] as const).map(([value,label,Icon]) => (
@@ -339,7 +419,7 @@ export function Cuaderno() {
                 ref={editorRef}
                 contentEditable={tool === "texto"}
                 suppressContentEditableWarning
-                onInput={e => patch({ html: e.currentTarget.innerHTML })}
+                onInput={e => patch({ html: e.currentTarget.innerHTML })} onMouseUp={rememberSelection} onKeyUp={rememberSelection}
                 className="relative z-10 min-h-[calc(100vh-112px)] p-6 text-lg leading-8 outline-none"
                 data-placeholder="Tocá y escribí..."
               />

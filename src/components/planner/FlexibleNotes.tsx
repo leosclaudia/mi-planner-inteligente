@@ -155,37 +155,17 @@ function applyFlexInlineStyle(text:HTMLElement,styles:Record<string,string>){
 function applyFlexHighlight(text:HTMLElement,color:string){
  const s=window.getSelection();if(!s||!s.rangeCount)return;
  const r=s.getRangeAt(0);if(r.collapsed||!text.contains(r.startContainer)||!text.contains(r.endContainer))return;
+ const saved=r.cloneRange();
  const isClear=!color||color==="transparent";
-
  try{
-  // Usamos el motor nativo del contentEditable para que Chrome divida
-  // exactamente en los límites que el usuario seleccionó. No extraemos
-  // ni reinsertamos nodos: así no alteramos la selección ni el orden.
   document.execCommand("styleWithCSS",false,"true");
-
   if(isClear){
    document.execCommand("hiliteColor",false,"transparent");
    document.execCommand("backColor",false,"transparent");
-
-   // Normalizar SOLO los elementos completamente contenidos por la selección.
-   // Esto limpia restos históricos sin ampliar el rango elegido.
-   const selectedRange=s.rangeCount?s.getRangeAt(0):null;
-   if(selectedRange){
-    const all=Array.from(text.querySelectorAll<HTMLElement>("[data-planner-highlight],span[style],font[style]"));
-    all.forEach(el=>{
-     try{
-      if(selectedRange.intersectsNode(el) && selectedRange.toString().includes(el.textContent||"")){
-       el.style.removeProperty("background");
-       el.style.removeProperty("background-color");
-       el.removeAttribute("data-planner-highlight");
-       if(el.getAttribute("style")==="")el.removeAttribute("style");
-      }
-     }catch{}
-    });
-   }
   }else{
    document.execCommand("hiliteColor",false,color);
   }
+  s.removeAllRanges();s.addRange(saved);
  }catch{}
 }
 function applyFlexFontSizePx(text:HTMLElement,value:string){

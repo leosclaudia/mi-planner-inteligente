@@ -41,41 +41,91 @@ const flexResizeHandle=`<span class="flex-resize-handle" contenteditable="false"
 const imageHtml=(src:string)=>`<span class="planner-flex-free-image" contenteditable="false" data-selected="false" style="position:absolute;left:16px;top:52px;width:180px;display:block;z-index:20;touch-action:none;user-select:none;"><img src="${src}" alt="Imagen" draggable="false" style="display:block;width:100%;height:auto;border-radius:10px;pointer-events:auto;"/>${flexDeleteHandle}${flexResizeHandle}</span>`;
 const normalizeLegacyTextHtml=(html:string)=>{
  const box=document.createElement("div");box.innerHTML=html;
- const attrs=(el:Element)=>Array.from(el.attributes).map(a=>`${a.name}=${a.value}`).sort().join("|");
- let changed=true;
- while(changed){
-  changed=false;
-  Array.from(box.querySelectorAll<HTMLElement>("span")).forEach(span=>{
-   if(span.attributes.length===0){
-    span.replaceWith(...Array.from(span.childNodes));changed=true;return;
-   }
-   if(span.childNodes.length===1){
-    const child=span.firstElementChild as HTMLElement|null;
-    if(child?.tagName==="SPAN"&&attrs(span)===attrs(child)){
-     span.replaceWith(child);changed=true;return;
-    }
+
+ // Detectamos HTML heredado problemático. Si no hay señales de estructura antigua,
+ // lo dejamos intacto para no tocar notas nuevas.
+ const legacy=!!box.querySelector(
+  "font,[contenteditable='false'],[draggable='true'],[style*='user-select'],span span,span[style*='display: inline-block'],span[style*='display:inline-block']"
+ );
+ if(!legacy)return html;
+
+ const STYLE_PROPS=[
+  "font-family","font-size","font-style","font-weight","color",
+  "text-decoration","text-decoration-line","text-decoration-color",
+  "text-shadow","-webkit-text-stroke","paint-order",
+  "background","background-color"
+ ];
+
+ const mergedStyle=(el:Element|null)=>{
+  const chain:HTMLElement[]=[];
+  let cur=el as HTMLElement|null;
+  while(cur&&cur!==box){chain.unshift(cur);cur=cur.parentElement}
+  const out:Record<string,string>={};
+  chain.forEach(node=>{
+   STYLE_PROPS.forEach(prop=>{
+    const v=node.style.getPropertyValue(prop);
+    if(v)out[prop]=v;
+   });
+   if(node.tagName==="FONT"){
+    const face=node.getAttribute("face"); if(face)out["font-family"]=face;
+    const color=node.getAttribute("color"); if(color)out["color"]=color;
    }
   });
- }
- Array.from(box.querySelectorAll<HTMLElement>("[contenteditable='false']")).forEach(el=>{
-  if(el.matches("img,button,.planner-flex-free-image,.flex-resize-handle,.planner-image-delete"))return;
-  if(el.querySelector("img,button"))return;
-  el.removeAttribute("contenteditable");
+  return out;
+ };
+
+ const copyTextNode=(node:Text)=>{
+  const text=node.data.replace(/\u200B|\uFEFF|\u2060/g,"");
+  if(!text)return document.createTextNode("");
+  const span=document.createElement("span");
+  const styles=mergedStyle(node.parentElement);
+  Object.entries(styles).forEach(([k,v])=>span.style.setProperty(k,v));
+  // Muy importante: el nuevo fragmento queda como texto editable normal.
+  span.removeAttribute("contenteditable");
+  span.removeAttribute("draggable");
+  span.style.removeProperty("user-select");
+  span.style.removeProperty("-webkit-user-select");
+  span.style.removeProperty("display");
+  span.style.removeProperty("vertical-align");
+  span.style.removeProperty("box-decoration-break");
+  span.style.removeProperty("-webkit-box-decoration-break");
+  span.style.removeProperty("padding");
+  span.style.removeProperty("border-radius");
+  span.appendChild(document.createTextNode(text));
+  return span;
+ };
+
+ const rebuild=(parent:Node,target:HTMLElement)=>{
+  Array.from(parent.childNodes).forEach(node=>{
+   if(node.nodeType===Node.TEXT_NODE){
+    target.appendChild(copyTextNode(node as Text));
+    return;
+   }
+   if(node.nodeType!==Node.ELEMENT_NODE)return;
+   const el=node as HTMLElement;
+   if(el.matches(".planner-flex-free-image"))return;
+   if(el.tagName==="BR"){target.appendChild(document.createElement("br"));return}
+
+   const isBlock=["DIV","P","LI","UL","OL","BLOCKQUOTE"].includes(el.tagName);
+   if(isBlock){
+    const wrap=document.createElement(el.tagName==="P"?"p":"div");
+    rebuild(el,wrap);
+    target.appendChild(wrap);
+   }else{
+    rebuild(el,target);
+   }
+  });
+ };
+
+ const clean=document.createElement("div");
+ rebuild(box,clean);
+
+ // Quitar spans vacíos y normalizar nodos de texto consecutivos.
+ Array.from(clean.querySelectorAll("span")).forEach(span=>{
+  if(!(span.textContent||"")&&!span.querySelector("br"))span.remove();
  });
- Array.from(box.querySelectorAll<HTMLElement>("[style]")).forEach(el=>{
-  const us=el.style.userSelect || el.style.getPropertyValue("-webkit-user-select");
-  if(us==="none"||us==="all"){
-   el.style.removeProperty("user-select");
-   el.style.removeProperty("-webkit-user-select");
-   if(el.getAttribute("style")==="")el.removeAttribute("style");
-  }
- });
- box.normalize();
- const walker=document.createTreeWalker(box,NodeFilter.SHOW_TEXT);
- const nodes:Text[]=[];let n:Node|null;
- while((n=walker.nextNode()))nodes.push(n as Text);
- nodes.forEach(node=>{node.data=node.data.replace(/\u200B|\uFEFF|\u2060/g,"")});
- return box.innerHTML;
+ clean.normalize();
+ return clean.innerHTML;
 };
 const trimLegacyTrailingSpace=(html:string)=>{
  const box=document.createElement("div");box.innerHTML=html;

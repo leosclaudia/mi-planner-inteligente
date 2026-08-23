@@ -338,40 +338,31 @@ export function Cuaderno() {
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                          <div className="group relative">
-                            <button type="button" onMouseDown={rememberSelection}
-                              className="flex h-9 w-full items-center justify-between rounded-full border bg-card px-3 text-[11px] shadow-sm">
-                              <span>Fuente</span><span className="text-[9px]">⌄</span>
-                            </button>
-                            <div className="invisible absolute right-0 top-10 z-50 max-h-56 w-44 translate-y-1 overflow-y-auto rounded-2xl border bg-card p-1.5 opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                              {["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Lora","Century Gothic","Lucida Sans","Lucida Console","Book Antiqua","Impact","Consolas","Franklin Gothic Medium","Rockwell","Baskerville","Cambria","Candara"].map(font => (
-                                <button key={font} type="button"
-                                  onMouseDown={e=>{e.preventDefault();rememberSelection();}}
-                                  onClick={()=>formatText("fontName",font)}
-                                  style={{fontFamily:font}}
-                                  className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7] focus:bg-[#f7ece7]">
-                                  {font}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="group relative">
-                            <button type="button" onMouseDown={rememberSelection}
-                              className="flex h-9 w-full items-center justify-between rounded-full border bg-card px-3 text-[11px] shadow-sm">
-                              <span>Tamaño</span><span className="text-[9px]">⌄</span>
-                            </button>
-                            <div className="invisible absolute right-0 top-10 z-50 max-h-56 w-24 translate-y-1 overflow-y-auto rounded-2xl border bg-card p-1.5 opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => (
-                                <button key={size} type="button"
-                                  onMouseDown={e=>{e.preventDefault();rememberSelection();}}
-                                  onClick={()=>setTextSize(`${size}px`)}
-                                  className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7] focus:bg-[#f7ece7]">
-                                  {size} px
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                      <button type="button" onClick={() => { setTool("texto"); setToolOptions(toolOptions==="text"?null:"text"); }}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="texto"?"bg-[#f3e4f2]":"bg-background"}`}><Type className="h-4 w-4"/>Texto</button>
+                      <button type="button" onClick={() => setToolOptions(toolOptions==="paper"?null:"paper")}
+                        className="inline-flex items-center gap-1.5 rounded-xl border bg-background px-2.5 py-2 text-xs font-semibold"><BookOpen className="h-4 w-4"/>Hoja</button>
+                      <button type="button" onClick={() => { setTool("lapiz"); setToolOptions(toolOptions==="pencil"?null:"pencil"); }}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="lapiz"?"bg-[#f7e5df]":"bg-background"}`}><Pencil className="h-4 w-4"/>Lápiz</button>
+                      <button type="button" onClick={() => { setTool("goma"); setToolOptions(toolOptions==="eraser"?null:"eraser"); }}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold ${tool==="goma"?"bg-[#f7e5df]":"bg-background"}`}><Eraser className="h-4 w-4"/>Goma</button>
+                    </div>
+                    {toolOptions === "text" && (
+                      <div className="mt-2 space-y-2 rounded-xl border bg-background/90 p-2">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <select defaultValue="Arial" onMouseDown={rememberSelection} onChange={e=>formatText("fontName",e.target.value)}
+                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Fuente">
+                            <option value="Arial">Arial</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Lora">Lora</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Courier New">Courier</option>
+                          </select>
+                          <select defaultValue="16px" onMouseDown={rememberSelection} onChange={e=>setTextSize(e.target.value)}
+                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Tamaño">
+                            <option value="12px">12</option><option value="14px">14</option><option value="16px">16</option>
+                            <option value="18px">18</option><option value="22px">22</option><option value="28px">28</option><option value="36px">36</option>
+                          </select>
                         </div>
                         <div className="flex flex-wrap gap-1">
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
@@ -382,15 +373,11 @@ export function Cuaderno() {
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyRight")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Derecha"><AlignRight className="h-4 w-4"/></button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <label onMouseDown={rememberSelection} title="Color de texto" className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-card shadow-sm">
-                            <span className="text-[11px] font-bold">A</span>
-                            <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer rounded-full opacity-0"/>
-                            <span className="absolute bottom-1 h-1 w-4 rounded-full bg-[#2f2926]"/>
+                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
+                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
                           </label>
-                          <label onMouseDown={rememberSelection} title="Resaltador" className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border bg-card shadow-sm">
-                            <Highlighter className="h-4 w-4"/>
-                            <input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer rounded-full opacity-0"/>
-                            <span className="absolute bottom-1 h-1 w-4 rounded-full bg-[#fff2a8]"/>
+                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
+                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
                           </label>
                         </div>
                       </div>

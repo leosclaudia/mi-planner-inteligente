@@ -4,7 +4,6 @@ import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Copy, Highlight
 import { AppGate } from "@/components/planner/AppGate";
 import { PageShell } from "@/components/planner/PageShell";
 import { FlexibleNotes } from "@/components/planner/FlexibleNotes";
-import { Cuaderno } from "@/components/planner/Cuaderno";
 
 export const Route = createFileRoute("/notas")({ component: () => <AppGate><NotasPage /></AppGate> });
 type BoxId="hoy"|"libre"; type Panel="stickers"|"colors"|"highlight"|"background"|"stroke"|"ink"|"more"|null; type StickerGroup="Favoritos"|"Agenda"|"Deco"|"Comida"|"Viajes"|"Caritas";
@@ -208,7 +207,6 @@ function NotasPage(){
   <div className="mt-1 text-xs text-muted-foreground">Editando: <b>{BOXES.find(b=>b.id===active)?.title}</b></div></div>
   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>{addImage(e.target.files?.[0]);e.currentTarget.value=""}}/>
   <div className="grid grid-cols-2 items-start gap-4 max-[640px]:grid-cols-1">{BOXES.map(box=><section key={box.id} onPointerDown={()=>selectBase(box.id)} style={{backgroundColor:backgrounds[box.id]}} className={`planner-box-libre rounded-[1.4rem] border shadow-sm ${active===box.id?"border-[#D9A596]/60":"border-border"}`}><div className={`${box.tone} border-b border-border px-4 py-2 text-xs font-extrabold tracking-wide`}>{box.title}</div><div className="relative min-h-[120px]"><div ref={el=>{refs.current[box.id]=el;if(el){upgradeImages(el);ensureRootHeight(el);setTimeout(()=>sizeInkCanvas(box.id,inkCanvasRefs.current[box.id]),0)}}} data-box-id={box.id} contentEditable={inkTool==="off"} suppressContentEditableWarning onFocus={()=>selectBase(box.id)} onBeforeInput={()=>pushTextUndo(box.id)} onInput={()=>{remember(box.id);save(box.id);setTimeout(()=>sizeInkCanvas(box.id,inkCanvasRefs.current[box.id]),0)}} onKeyUp={()=>remember(box.id)} onMouseUp={()=>remember(box.id)} onTouchEnd={()=>setTimeout(()=>remember(box.id),0)} onPointerDown={e=>{if(inkTool==="off")startImageTransform(box.id,e)}} onPointerMove={e=>{if(inkTool==="off")moveImage(e)}} onPointerUp={e=>{if(inkTool==="off")endImage(e)}} onPointerCancel={e=>{if(inkTool==="off")endImage(e)}} className="planner-box-libre-body relative z-10 min-h-[120px] px-4 py-4 text-base leading-[1.3] outline-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" data-placeholder={box.placeholder}/><canvas ref={c=>sizeInkCanvas(box.id,c)} className="absolute left-0 top-0 z-20 touch-none" style={{pointerEvents:inkTool==="off"?"none":"auto",cursor:inkTool==="eraser"?"cell":"crosshair"}} onPointerDown={e=>startInk(box.id,e)} onPointerMove={e=>moveInk(box.id,e)} onPointerUp={()=>endInk(box.id)} onPointerCancel={()=>endInk(box.id)}/></div></section>)}</div>
-  <div style={{marginTop:"20px"}}><Cuaderno /></div>
   <div style={{marginTop:"20px"}}><FlexibleNotes /></div>
  </PageShell>
 }

@@ -1,3 +1,91 @@
+import { useEffect,useRef,useState } from "react";
+import { CalendarDays,GripVertical,ImagePlus,Palette,Plus,Printer,Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/language";
+
+type Note={id:string;title:string;date:string;html:string;order:number;backgroundColor?:string};
+type FlexImageEvent=CustomEvent<{noteId:string;src:string;left?:number;top?:number}>;
+type FlexFormatEvent=CustomEvent<{command:string;value?:string}>;
+type SavedSelection={noteId:string;startPath:number[];startOffset:number;endPath:number[];endOffset:number};
+const KEY="planner-flex-notes-v1";
+const HIGHLIGHT_CLEANUP_KEY="planner-flex-highlight-cleanup-v1";
+const clearLegacyHighlightStyles=(html:string)=>{
+ const box=document.createElement("div");box.innerHTML=html;
+ box.querySelectorAll<HTMLElement>("span").forEach(span=>{
+  const hasHighlight=
+   !!span.dataset.plannerHighlight||
+   !!span.style.backgroundColor||
+   (!!span.style.background&&span.style.background!=="none");
+  if(!hasHighlight)return;
+  span.style.backgroundColor="";
+  span.style.background="";
+  span.style.removeProperty("box-decoration-break");
+  span.style.removeProperty("-webkit-box-decoration-break");
+  span.style.removeProperty("padding");
+  span.style.removeProperty("border-radius");
+  if(span.style.display==="inline-block")span.style.display="";
+  if(span.style.lineHeight==="1.15")span.style.lineHeight="";
+  if(span.style.verticalAlign==="baseline")span.style.verticalAlign="";
+  delete span.dataset.plannerHighlight;
+  if(!span.getAttribute("style")?.trim()&&!span.attributes.length){
+   span.replaceWith(...Array.from(span.childNodes));
+  }
+ });
+ return box.innerHTML;
+};
+const NOTE_BACKGROUNDS=["#FFFFFF","#FFF8E7","#FCE8EC","#F7E5DF","#EAF4E4","#E4F1F5","#EEE8F6","#F4E8DE"];
+const SIZE_PX:Record<string,string>={"1":"10px","2":"13px","3":"16px","4":"18px","5":"24px","6":"32px","7":"48px"};
+const read=():Note[]=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}};
+const flexDeleteHandle=`<button type="button" class="flex-image-delete" contenteditable="false" data-action="delete" aria-label="Eliminar imagen" title="Eliminar imagen"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6l-1 14c-.1 1.1-1 2-2.1 2H8.1C7 22 6.1 21.1 6 20L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>`;
+const flexResizeHandle=`<span class="flex-resize-handle" contenteditable="false" data-resize="se" aria-label="Cambiar tamaño"></span>`;
+const imageHtml=(src:string)=>`<span class="planner-flex-free-image" contenteditable="false" data-selected="false" style="position:absolute;left:16px;top:52px;width:180px;display:block;z-index:20;touch-action:none;user-select:none;"><img src="${src}" alt="Imagen" draggable="false" style="display:block;width:100%;height:auto;border-radius:10px;pointer-events:auto;"/>${flexDeleteHandle}${flexResizeHandle}</span>`;
+const normalizeLegacyTextHtml=(html:string)=>{
+ const box=document.createElement("div");box.innerHTML=html;
+
+ // Detectamos HTML heredado problemático. Si no hay señales de estructura antigua,
+ // lo dejamos intacto para no tocar notas nuevas.
+ const legacy=!!box.querySelector(
+  "font,[contenteditable='false'],[draggable='true'],[style*='user-select'],span span,span[style*='display: inline-block'],span[style*='display:inline-block']"
+ );
+ if(!legacy)return html;
+
+ const STYLE_PROPS=[
+  "font-family","font-size","font-style","font-weight","color",
+  "text-decoration","text-decoration-line","text-decoration-color",
+  "text-shadow","-webkit-text-stroke","paint-order",
+  "background","background-color"
+ ];
+
+ const mergedStyle=(el:Element|null)=>{
+  const chain:HTMLElement[]=[];
+  let cur=el as HTMLElement|null;
+  while(cur&&cur!==box){chain.unshift(cur);cur=cur.parentElement}
+  const out:Record<string,string>={};
+  chain.forEach(node=>{
+   STYLE_PROPS.forEach(prop=>{
+    const v=node.style.getPropertyValue(prop);
+    if(v)out[prop]=v;
+   });
+   if(node.tagName==="FONT"){
+    const face=node.getAttribute("face"); if(face)out["font-family"]=face;
+    const color=node.getAttribute("color"); if(color)out["color"]=color;
+   }
+  });
+  return out;
+ };
+
+ const copyTextNode=(node:Text)=>{
+  const text=node.data.replace(/\u200B|\uFEFF|\u2060/g,"");
+  if(!text)return document.createTextNode("");
+  const span=document.createElement("span");
+  const styles=mergedStyle(node.parentElement);
+  Object.entries(styles).forEach(([k,v])=>span.style.setProperty(k,v));
+  // Muy importante: el nuevo fragmento queda como texto editable normal.
+  span.removeAttribute("contenteditable");
+  span.removeAttribute("draggable");
+  span.style.removeProperty("user-select");
+  span.style.removeProperty("-webkit-user-select");
+  span.style.removeProperty("display");
   span.style.removeProperty("vertical-align");
   span.style.removeProperty("box-decoration-break");
   span.style.removeProperty("-webkit-box-decoration-break");

@@ -63,6 +63,10 @@ export function Cuaderno() {
   const [inkWidth, setInkWidth] = useState(4);
   const [toolPanelOpen, setToolPanelOpen] = useState(false);
   const [toolOptions, setToolOptions] = useState<null | "text" | "paper" | "pencil" | "eraser">(null);
+  const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align">(null);
+  const [textFont, setTextFont] = useState("Arial");
+  const [textPx, setTextPx] = useState("16px");
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right" | "justify">("left");
   const editorRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
@@ -350,34 +354,45 @@ export function Cuaderno() {
                     {toolOptions === "text" && (
                       <div className="mt-2 space-y-2 rounded-xl border bg-background/90 p-2">
                         <div className="grid grid-cols-2 gap-1.5">
-                          <select defaultValue="Arial" onMouseDown={rememberSelection} onChange={e=>formatText("fontName",e.target.value)}
-                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Fuente">
-                            <option value="Arial">Arial</option>
-                            <option value="Georgia">Georgia</option>
-                            <option value="Lora">Lora</option>
-                            <option value="Verdana">Verdana</option>
-                            <option value="Courier New">Courier</option>
-                          </select>
-                          <select defaultValue="16px" onMouseDown={rememberSelection} onChange={e=>setTextSize(e.target.value)}
-                            className="h-8 rounded-lg border bg-card px-2 text-[11px] outline-none" aria-label="Tamaño">
-                            <option value="12px">12</option><option value="14px">14</option><option value="16px">16</option>
-                            <option value="18px">18</option><option value="22px">22</option><option value="28px">28</option><option value="36px">36</option>
-                          </select>
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="font"?null:"font")} className="flex h-8 w-full items-center justify-between rounded-full border bg-card px-2.5 text-[11px] shadow-sm">
+                              <span className="truncate" style={{fontFamily:textFont}}>{textFont}</span><span>⌄</span>
+                            </button>
+                            {textMenu==="font" && <div className="absolute right-0 top-9 z-[70] max-h-52 w-44 overflow-y-auto rounded-2xl border bg-card p-1.5 shadow-xl">
+                              {["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Lora","Century Gothic","Lucida Sans","Lucida Console","Book Antiqua","Impact","Consolas","Franklin Gothic Medium","Rockwell","Baskerville","Cambria","Candara"].map(font => <button key={font} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextFont(font);formatText("fontName",font);setTextMenu(null);}} style={{fontFamily:font}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{font}</button>)}
+                            </div>}
+                          </div>
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="size"?null:"size")} className="flex h-8 w-full items-center justify-between rounded-full border bg-card px-2.5 text-[11px] shadow-sm">
+                              <span>{textPx.replace("px","")} px</span><span>⌄</span>
+                            </button>
+                            {textMenu==="size" && <div className="absolute right-0 top-9 z-[70] max-h-52 w-24 overflow-y-auto rounded-2xl border bg-card p-1.5 shadow-xl">
+                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => <button key={size} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{const px=`${size}px`;setTextPx(px);setTextSize(px);setTextMenu(null);}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{size} px</button>)}
+                            </div>}
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("italic")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("underline")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyLeft")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Izquierda"><AlignLeft className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyCenter")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Centrar"><AlignCenter className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("justifyRight")} className="grid h-8 w-8 place-items-center rounded-lg border bg-card" title="Derecha"><AlignRight className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("italic")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("underline")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="align"?null:"align")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Alineación">
+                              {textAlign==="left"?<AlignLeft className="h-4 w-4"/>:textAlign==="center"?<AlignCenter className="h-4 w-4"/>:textAlign==="right"?<AlignRight className="h-4 w-4"/>:<span className="text-xs">☰</span>}
+                            </button>
+                            {textMenu==="align" && <div className="absolute right-0 top-9 z-[70] flex gap-1 rounded-2xl border bg-card p-1.5 shadow-xl">
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("left");formatText("justifyLeft");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignLeft className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("center");formatText("justifyCenter");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignCenter className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("right");formatText("justifyRight");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignRight className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("justify");formatText("justifyFull");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]" title="Justificado"><span className="text-xs">☰</span></button>
+                            </div>}
+                          </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
-                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
+                            A <input type="color" defaultValue="#2f2926" onChange={e=>formatText("foreColor",e.target.value)} className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"/>
                           </label>
-                          <label onMouseDown={rememberSelection} className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1 text-[10px] font-semibold">
-                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"/>
+                          <label onMouseDown={rememberSelection} className="flex h-8 w-8 items-center justify-center gap-0 rounded-full border bg-card p-0 text-[10px] font-semibold shadow-sm">
+                            <Highlighter className="h-3.5 w-3.5"/><input type="color" defaultValue="#fff2a8" onChange={e=>formatText("hiliteColor",e.target.value)} className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"/>
                           </label>
                         </div>
                       </div>

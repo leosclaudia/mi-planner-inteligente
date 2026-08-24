@@ -65,7 +65,7 @@ export function Cuaderno() {
   const [toolOptions, setToolOptions] = useState<null | "text" | "paper" | "pencil" | "eraser">(null);
   const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align" | "color" | "highlight" | "more">(null);
   const [textFont, setTextFont] = useState("Arial");
-  const [textPx, setTextPx] = useState("16px");
+  const [textPx, setTextPx] = useState("8px");
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right" | "justify">("left");
   const [inkRecognizing, setInkRecognizing] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +78,59 @@ export function Cuaderno() {
     wrap: HTMLElement; mode: "move"|"resize"; corner?: "nw"|"ne"|"sw"|"se";
     x:number; y:number; left:number; top:number; width:number; height:number;
   }|null>(null);
+  const undoHtmlRef = useRef<string[]>([]);
+  const redoHtmlRef = useRef<string[]>([]);
+  const DEFAULT_FONT = "Arial";
+  const DEFAULT_SIZE = "8px";
+
+  const pushHtmlHistory = () => {
+    const root=editorRef.current;
+    if(!root) return;
+    const html=root.innerHTML;
+    if(undoHtmlRef.current[undoHtmlRef.current.length-1]!==html){
+      undoHtmlRef.current.push(html);
+      if(undoHtmlRef.current.length>80) undoHtmlRef.current.shift();
+    }
+    redoHtmlRef.current=[];
+  };
+
+  const undoHtml = () => {
+    const root=editorRef.current;
+    if(!root || undoHtmlRef.current.length===0) return;
+    const now=root.innerHTML;
+    const prev=undoHtmlRef.current.pop()!;
+    redoHtmlRef.current.push(now);
+    root.innerHTML=prev;
+    patch({html:prev});
+    setTextMenu(null);setToolOptions(null);
+  };
+
+  const redoHtml = () => {
+    const root=editorRef.current;
+    if(!root || redoHtmlRef.current.length===0) return;
+    const now=root.innerHTML;
+    const next=redoHtmlRef.current.pop()!;
+    undoHtmlRef.current.push(now);
+    root.innerHTML=next;
+    patch({html:next});
+    setTextMenu(null);setToolOptions(null);
+  };
+
+  const syncFormatFromSelection = () => {
+    const sel=window.getSelection();
+    if(!sel || !sel.rangeCount || sel.isCollapsed || !editorRef.current){
+      setTextFont(DEFAULT_FONT);setTextPx(DEFAULT_SIZE);return;
+    }
+    const r=sel.getRangeAt(0);
+    if(!editorRef.current.contains(r.commonAncestorContainer)){
+      setTextFont(DEFAULT_FONT);setTextPx(DEFAULT_SIZE);return;
+    }
+    const node=r.startContainer.nodeType===Node.ELEMENT_NODE ? r.startContainer as HTMLElement : r.startContainer.parentElement;
+    if(!node)return;
+    const cs=getComputedStyle(node);
+    setTextFont(cs.fontFamily.split(",")[0].replace(/["']/g,"").trim()||DEFAULT_FONT);
+    setTextPx(`${Math.round(parseFloat(cs.fontSize)||8)}px`);
+  };
 
   const rememberSelection = () => {
     const sel = window.getSelection();
@@ -293,6 +346,7 @@ export function Cuaderno() {
   };
 
   const formatText = (command: string, value?: string) => {
+    pushHtmlHistory();
     setTool("texto");
     editorRef.current?.focus();
     restoreSelection();
@@ -302,6 +356,7 @@ export function Cuaderno() {
   };
 
   const setTextSize = (px: string) => {
+    pushHtmlHistory();
     setTool("texto");
     editorRef.current?.focus();
     restoreSelection();
@@ -316,7 +371,7 @@ export function Cuaderno() {
   };
 
   const imageHandle=()=>`<span data-img-handle="se" style="position:absolute;width:18px;height:18px;border:2px solid #fff;background:#e8a58d;border-radius:50%;z-index:6;right:-9px;bottom:-9px;box-shadow:0 1px 4px rgba(0,0,0,.18)"></span>`;
-  const freeImageHtml=(src:string)=>`<span class="cuaderno-free-image" contenteditable="false" data-selected="true" style="position:absolute;left:24px;top:70px;width:240px;max-width:calc(100% - 48px);display:block;z-index:4;touch-action:none;user-select:none;border:1.5px solid #e8a58d;border-radius:13px;"><img src="${src}" alt="" draggable="false" style="display:block;width:100%;height:auto;border-radius:12px;pointer-events:none;"/><button type="button" data-img-delete="true" style="position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:999px;border:1px solid #ead7d1;background:#fff;color:#d66f62;display:flex;align-items:center;justify-content:center;z-index:8;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer">×</button>${imageHandle()}</span>`;
+  const freeImageHtml=(src:string)=>`<span class="cuaderno-free-image" contenteditable="false" data-selected="true" style="position:absolute;left:24px;top:70px;width:240px;max-width:calc(100% - 48px);display:block;z-index:4;touch-action:none;user-select:none;border:1.5px solid #e8a58d;border-radius:13px;"><img src="${src}" alt="" draggable="false" style="display:block;width:100%;height:auto;border-radius:12px;pointer-events:none;"/><button type="button" data-img-delete="true" style="position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:999px;border:1px solid #ead7d1;background:#fff;color:#d66f62;display:flex;align-items:center;justify-content:center;z-index:8;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer">🗑</button>${imageHandle()}</span>`;
 
   const deselectImages=(except?:HTMLElement)=>{
     editorRef.current?.querySelectorAll<HTMLElement>(".cuaderno-free-image").forEach(w=>{
@@ -333,6 +388,7 @@ export function Cuaderno() {
     const reader=new FileReader();
     reader.onload=()=>{
       const root=editorRef.current; if(!root) return;
+      pushHtmlHistory();
       root.insertAdjacentHTML("beforeend",freeImageHtml(String(reader.result||"")));
       const all=root.querySelectorAll<HTMLElement>(".cuaderno-free-image");
       const wrap=all[all.length-1]; if(wrap)deselectImages(wrap);
@@ -346,6 +402,7 @@ export function Cuaderno() {
     const wrap=target.closest<HTMLElement>(".cuaderno-free-image");
     if(!wrap){deselectImages();return;}
     e.preventDefault();e.stopPropagation();deselectImages(wrap);
+    pushHtmlHistory();
     if(target.closest("[data-img-delete]")){wrap.remove();saveText();return;}
     const handle=target.closest<HTMLElement>("[data-img-handle]");
     const rr=e.currentTarget.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
@@ -369,6 +426,7 @@ export function Cuaderno() {
   const onEditorPointerUp=()=>{if(imageActionRef.current){imageActionRef.current=null;saveText();}};
 
   const wrapSelection = (style:string) => {
+    pushHtmlHistory();
     setTool("texto"); editorRef.current?.focus(); restoreSelection();
     const sel=window.getSelection(); if(!sel||!sel.rangeCount) return;
     const r=sel.getRangeAt(0); if(!editorRef.current?.contains(r.commonAncestorContainer)) return;
@@ -378,6 +436,7 @@ export function Cuaderno() {
   };
 
   const insertSticker=(sticker:string)=>{
+    pushHtmlHistory();
     setTool("texto"); editorRef.current?.focus(); restoreSelection();
     document.execCommand("insertHTML",false,`<span style="font-size:28px">${sticker}</span>`);
     saveText(); setTextMenu(null); setToolOptions(null);
@@ -464,7 +523,7 @@ export function Cuaderno() {
             <div className="relative mx-auto min-h-[calc(100vh-112px)] w-full max-w-[1050px] overflow-hidden rounded-xl border shadow-sm" style={paperStyle(current.paper)}>
               <div className="absolute right-0 top-3 z-40 flex items-start">
                 {toolPanelOpen && (
-                  <div className="mr-1 w-[210px] max-w-[65vw] rounded-l-[1.4rem] rounded-r-md border border-border bg-card/95 p-2 shadow-xl backdrop-blur-md">
+                  <div className="mr-1 w-[230px] max-w-[72vw] rounded-l-[1.4rem] rounded-r-md border border-border bg-card/95 p-2 shadow-xl backdrop-blur-md">
                     <div className="mb-1 flex items-center justify-between px-1">
                       <span className="text-xs font-bold">Herramientas</span>
                       <button type="button" onClick={() => { setToolPanelOpen(false); setToolOptions(null); }} className="grid h-7 w-7 place-items-center rounded-full hover:bg-accent">
@@ -501,7 +560,7 @@ export function Cuaderno() {
                             </div>}
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("bold");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("italic");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("underline");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
@@ -548,8 +607,8 @@ export function Cuaderno() {
                               </label>
                             </div>}
                           </div>
-                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{editorRef.current?.focus();document.execCommand("undo");saveText();}} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Deshacer"><Undo2 className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{editorRef.current?.focus();document.execCommand("redo");saveText();}} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Rehacer"><Redo2 className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={undoHtml} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Deshacer"><Undo2 className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={redoHtml} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Rehacer"><Redo2 className="h-4 w-4"/></button>
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>imageInputRef.current?.click()} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Insertar imagen"><ImagePlus className="h-4 w-4"/></button>
                           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={insertImage}/>
                           <div className="relative">
@@ -557,8 +616,8 @@ export function Cuaderno() {
                             {textMenu==="more" && <div className="absolute right-full top-0 z-[70] mr-2 w-60 max-w-[calc(100vw-7rem)] rounded-2xl border bg-card p-2 shadow-xl">
                               <div className="grid grid-cols-3 gap-1">
                                 <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("text-shadow:1px 1px 2px rgba(80,65,58,.28)");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Sombra</button>
-                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("border:1px solid #D9C6BC;border-radius:6px;padding:1px 3px");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
-                                <label className="relative cursor-pointer rounded-full border px-2 py-1 text-center text-[10px]">Borde 🎨<input type="color" className="absolute inset-0 h-full w-full opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{wrapSelection(`border:1px solid ${e.target.value};border-radius:6px;padding:1px 3px`);setTextMenu(null);}}/></label>
+                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("-webkit-text-stroke:1px #D9C6BC;paint-order:stroke fill");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
+                                <label className="relative cursor-pointer rounded-full border px-2 py-1 text-center text-[10px]">Color borde<input type="color" className="absolute inset-0 h-full w-full opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{wrapSelection(`-webkit-text-stroke:1px ${e.target.value};paint-order:stroke fill`);setTextMenu(null);}}/></label>
                               </div>
                               <div className="mt-2 grid max-h-52 grid-cols-6 gap-1 overflow-y-auto overflow-x-hidden border-t pt-2">
                                 {STICKERS.map(x=><button key={x} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(x)} className="grid h-8 w-8 place-items-center rounded-full border bg-background text-lg">{x}</button>)}
@@ -609,9 +668,11 @@ export function Cuaderno() {
                 ref={editorRef}
                 contentEditable={tool === "texto"}
                 suppressContentEditableWarning
+                onBeforeInput={pushHtmlHistory}
                 onInput={e => patch({ html: e.currentTarget.innerHTML })}
-                onMouseUp={rememberSelection}
-                onKeyUp={rememberSelection}
+                onMouseUp={()=>{rememberSelection();syncFormatFromSelection();}}
+                onKeyUp={()=>{rememberSelection();syncFormatFromSelection();}}
+                onBlur={()=>{setTextFont(DEFAULT_FONT);setTextPx(DEFAULT_SIZE);}}
                 onPointerDown={onEditorPointerDown}
                 onPointerMove={onEditorPointerMove}
                 onPointerUp={onEditorPointerUp}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, Highlighter, Italic, List, PanelRightClose, PanelRightOpen, Pencil, Rows3, Trash2, Type, Underline, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, Highlighter, ImagePlus, Italic, List, MoreHorizontal, PanelRightClose, PanelRightOpen, Pencil, Rows3, Trash2, Type, Underline, X } from "lucide-react";
 
 type PaperType = "liso" | "rayado" | "cuadricula" | "punteado";
 
@@ -63,7 +63,7 @@ export function Cuaderno() {
   const [inkWidth, setInkWidth] = useState(4);
   const [toolPanelOpen, setToolPanelOpen] = useState(false);
   const [toolOptions, setToolOptions] = useState<null | "text" | "paper" | "pencil" | "eraser">(null);
-  const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align" | "color" | "highlight">(null);
+  const [textMenu, setTextMenu] = useState<null | "font" | "size" | "align" | "color" | "highlight" | "more">(null);
   const [textFont, setTextFont] = useState("Arial");
   const [textPx, setTextPx] = useState("16px");
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right" | "justify">("left");
@@ -73,6 +73,7 @@ export function Cuaderno() {
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
   const savedRange = useRef<Range | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const rememberSelection = () => {
     const sel = window.getSelection();
@@ -310,6 +311,33 @@ export function Cuaderno() {
     saveText();
   };
 
+  const insertImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file=e.target.files?.[0]; e.target.value="";
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      setTool("texto"); editorRef.current?.focus(); restoreSelection();
+      document.execCommand("insertHTML",false,`<img src="${String(reader.result)}" alt="" style="max-width:55%;height:auto;border-radius:14px;margin:6px;vertical-align:middle" />`);
+      saveText(); setTextMenu(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const wrapSelection = (style:string) => {
+    setTool("texto"); editorRef.current?.focus(); restoreSelection();
+    const sel=window.getSelection(); if(!sel||!sel.rangeCount) return;
+    const r=sel.getRangeAt(0); if(!editorRef.current?.contains(r.commonAncestorContainer)) return;
+    const span=document.createElement("span"); span.setAttribute("style",style);
+    try { r.surroundContents(span); } catch { const f=r.extractContents(); span.appendChild(f); r.insertNode(span); }
+    saveText(); rememberSelection();
+  };
+
+  const insertSticker=(sticker:string)=>{
+    setTool("texto"); editorRef.current?.focus(); restoreSelection();
+    document.execCommand("insertHTML",false,`<span style="font-size:28px">${sticker}</span>`);
+    saveText(); setTextMenu(null);
+  };
+
   return (
     <section className="rounded-[1.4rem] border border-border bg-card/70 p-3 shadow-sm">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -452,6 +480,9 @@ export function Cuaderno() {
                               {["#2F2926","#9B5C68","#C97962","#D59B54","#6F668F","#5F8294","#7B9B86","#A9789C"].map(c=>
                                 <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("foreColor",c);setTextMenu(null);}}
                                   className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Color ${c}`}/>)}
+                              <label className="relative h-7 w-7 cursor-pointer rounded-full border shadow-sm" title="Color personalizado" style={{background:"conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"}}>
+                                <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{formatText("foreColor",e.target.value);setTextMenu(null);}}/>
+                              </label>
                             </div>}
                           </div>
                           <div className="relative">
@@ -465,6 +496,24 @@ export function Cuaderno() {
                               {["#FFF3A3","#FFD9A0","#FFB3C1","#C9F2C7","#B8E3FF","#E3D1FF"].map(c=>
                                 <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor",c);setTextMenu(null);}}
                                   className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Resaltado ${c}`}/>)}
+                              <label className="relative h-7 w-7 cursor-pointer rounded-full border shadow-sm" title="Resaltado personalizado" style={{background:"conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"}}>
+                                <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{formatText("hiliteColor",e.target.value);setTextMenu(null);}}/>
+                              </label>
+                            </div>}
+                          </div>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>imageInputRef.current?.click()} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Insertar imagen"><ImagePlus className="h-4 w-4"/></button>
+                          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={insertImage}/>
+                          <div className="relative">
+                            <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="more"?null:"more")} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Más formato"><MoreHorizontal className="h-4 w-4"/></button>
+                            {textMenu==="more" && <div className="absolute bottom-10 right-0 z-[70] w-52 rounded-2xl border bg-card p-2 shadow-xl">
+                              <div className="grid grid-cols-3 gap-1">
+                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("text-shadow:1px 1px 2px rgba(80,65,58,.28)");setTextMenu(null);}} className="rounded-full border px-2 py-1 text-[10px]">Sombra</button>
+                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("border:1px solid #D9C6BC;border-radius:6px;padding:1px 3px");setTextMenu(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
+                                <label className="relative cursor-pointer rounded-full border px-2 py-1 text-center text-[10px]">Borde 🎨<input type="color" className="absolute inset-0 h-full w-full opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{wrapSelection(`border:1px solid ${e.target.value};border-radius:6px;padding:1px 3px`);setTextMenu(null);}}/></label>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1 border-t pt-2">
+                                {["🌱","🌸","⭐","❤️","✓","📌","💡","😊"].map(x=><button key={x} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(x)} className="grid h-8 w-8 place-items-center rounded-full border bg-background text-lg">{x}</button>)}
+                              </div>
                             </div>}
                           </div>
                         </div>
@@ -530,4 +579,4 @@ export function Cuaderno() {
       )}
     </section>
   );
-}
+  }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, Highlighter, ImagePlus, Italic, List, MoreHorizontal, PanelRightClose, PanelRightOpen, Pencil, Rows3, Trash2, Type, Underline, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, BookOpen, CalendarDays, ChevronLeft, Eraser, FilePlus2, Grid3X3, Highlighter, ImagePlus, Italic, List, MoreHorizontal, PanelRightClose, PanelRightOpen, Pencil, Rows3, Redo2, Trash2, Type, Underline, Undo2, X } from "lucide-react";
 
 type PaperType = "liso" | "rayado" | "cuadricula" | "punteado";
 
@@ -74,6 +74,10 @@ export function Cuaderno() {
   const last = useRef<{ x: number; y: number } | null>(null);
   const savedRange = useRef<Range | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageActionRef = useRef<{
+    wrap: HTMLElement; mode: "move"|"resize"; corner?: "nw"|"ne"|"sw"|"se";
+    x:number; y:number; left:number; top:number; width:number; height:number;
+  }|null>(null);
 
   const rememberSelection = () => {
     const sel = window.getSelection();
@@ -311,17 +315,58 @@ export function Cuaderno() {
     saveText();
   };
 
+  const imageHandle=(c:"nw"|"ne"|"sw"|"se")=>`<span data-img-handle="${c}" style="position:absolute;width:14px;height:14px;border:2px solid #fff;background:#63a7d8;border-radius:50%;z-index:6;${c.includes("n")?"top:-8px;":"bottom:-8px;"}${c.includes("w")?"left:-8px;":"right:-8px;"}"></span>`;
+  const freeImageHtml=(src:string)=>`<span class="cuaderno-free-image" contenteditable="false" data-selected="true" style="position:absolute;left:24px;top:70px;width:240px;max-width:calc(100% - 48px);display:block;z-index:4;touch-action:none;user-select:none;"><img src="${src}" alt="" draggable="false" style="display:block;width:100%;height:auto;border-radius:12px;pointer-events:none;"/><button type="button" data-img-delete="true" style="position:absolute;top:-14px;right:-14px;width:28px;height:28px;border-radius:999px;border:1px solid #ead7d1;background:#fff;color:#d66f62;display:flex;align-items:center;justify-content:center;z-index:8;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer">×</button>${imageHandle("nw")}${imageHandle("ne")}${imageHandle("sw")}${imageHandle("se")}</span>`;
+
+  const deselectImages=(except?:HTMLElement)=>{
+    editorRef.current?.querySelectorAll<HTMLElement>(".cuaderno-free-image").forEach(w=>{
+      const on=w===except;
+      w.dataset.selected=on?"true":"false";
+      const del=w.querySelector<HTMLElement>("[data-img-delete]"); if(del) del.style.display=on?"flex":"none";
+      w.querySelectorAll<HTMLElement>("[data-img-handle]").forEach(h=>h.style.display=on?"block":"none");
+    });
+  };
+
   const insertImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file=e.target.files?.[0]; e.target.value="";
     if(!file) return;
     const reader=new FileReader();
     reader.onload=()=>{
-      setTool("texto"); editorRef.current?.focus(); restoreSelection();
-      document.execCommand("insertHTML",false,`<img src="${String(reader.result)}" alt="" style="max-width:55%;height:auto;border-radius:14px;margin:6px;vertical-align:middle" />`);
-      saveText(); setTextMenu(null);
+      const root=editorRef.current; if(!root) return;
+      root.insertAdjacentHTML("beforeend",freeImageHtml(String(reader.result||"")));
+      const all=root.querySelectorAll<HTMLElement>(".cuaderno-free-image");
+      const wrap=all[all.length-1]; if(wrap)deselectImages(wrap);
+      saveText(); setTextMenu(null); setToolOptions(null);
     };
     reader.readAsDataURL(file);
   };
+
+  const onEditorPointerDown=(e:React.PointerEvent<HTMLDivElement>)=>{
+    const target=e.target as HTMLElement;
+    const wrap=target.closest<HTMLElement>(".cuaderno-free-image");
+    if(!wrap){deselectImages();return;}
+    e.preventDefault();e.stopPropagation();deselectImages(wrap);
+    if(target.closest("[data-img-delete]")){wrap.remove();saveText();return;}
+    const handle=target.closest<HTMLElement>("[data-img-handle]");
+    const rr=e.currentTarget.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+    imageActionRef.current={wrap,mode:handle?"resize":"move",corner:handle?.dataset.imgHandle as any,x:e.clientX,y:e.clientY,left:wr.left-rr.left,top:wr.top-rr.top,width:wr.width,height:wr.height};
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onEditorPointerMove=(e:React.PointerEvent<HTMLDivElement>)=>{
+    const a=imageActionRef.current;if(!a||!editorRef.current)return;
+    e.preventDefault();
+    const dx=e.clientX-a.x,dy=e.clientY-a.y,rootW=editorRef.current.clientWidth;
+    if(a.mode==="move"){
+      a.wrap.style.left=`${Math.max(0,Math.min(a.left+dx,rootW-a.width))}px`;
+      a.wrap.style.top=`${Math.max(0,a.top+dy)}px`;
+    }else{
+      const east=a.corner?.includes("e"), min=70;
+      const width=Math.max(min,Math.min(a.width+(east?dx:-dx),rootW-8));
+      a.wrap.style.width=`${width}px`;
+      if(!east)a.wrap.style.left=`${Math.max(0,a.left+a.width-width)}px`;
+    }
+  };
+  const onEditorPointerUp=()=>{if(imageActionRef.current){imageActionRef.current=null;saveText();}};
 
   const wrapSelection = (style:string) => {
     setTool("texto"); editorRef.current?.focus(); restoreSelection();
@@ -335,8 +380,10 @@ export function Cuaderno() {
   const insertSticker=(sticker:string)=>{
     setTool("texto"); editorRef.current?.focus(); restoreSelection();
     document.execCommand("insertHTML",false,`<span style="font-size:28px">${sticker}</span>`);
-    saveText(); setTextMenu(null);
+    saveText(); setTextMenu(null); setToolOptions(null);
   };
+
+  const STICKERS=["⭐","❤️","✨","🌸","🌷","🌼","🌻","🌿","🍃","🦋","🐝","🌈","☀️","🌙","☁️","📌","📎","✏️","🖊️","📝","📚","💡","✅","❗","🎯","⏰","📅","💻","📞","💬","😊","🥰","😍","😂","😉","😎","🤗","🥳","👏","🙌","💪","🙏","💕","🎀","☕","🍓","🍒","🍋","🍉","🥐","🍰","🍫","🍪","🧁","✈️","🚗","🚲","🧳","🗺️","📍"];
 
   return (
     <section className="rounded-[1.4rem] border border-border bg-card/70 p-3 shadow-sm">
@@ -450,7 +497,7 @@ export function Cuaderno() {
                               <span>{textPx.replace("px","")}</span><span>⌄</span>
                             </button>
                             {textMenu==="size" && <div className="absolute right-0 top-9 z-[70] max-h-52 w-24 overflow-y-auto rounded-2xl border bg-card p-1.5 shadow-xl">
-                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => <button key={size} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={(e)=>{const px=`${size}px`;setTextPx(px);setTextSize(px);setTextMenu(null);e.currentTarget.blur();}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{size}</button>)}
+                              {[8,10,12,14,16,18,20,22,24,28,30,32,34,36,38,40,42,44,46,48].map(size => <button key={size} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={(e)=>{const px=`${size}px`;setTextPx(px);setTextSize(px);setTextMenu(null);setToolOptions(null);e.currentTarget.blur();}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{size}</button>)}
                             </div>}
                           </div>
                         </div>
@@ -478,7 +525,7 @@ export function Cuaderno() {
                             </button>
                             {textMenu==="color" && <div className="absolute bottom-10 left-0 z-[70] flex w-44 flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-xl">
                               {["#2F2926","#9B5C68","#C97962","#D59B54","#6F668F","#5F8294","#7B9B86","#A9789C"].map(c=>
-                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("foreColor",c);setTextMenu(null);}}
+                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("foreColor",c);setTextMenu(null);setToolOptions(null);}}
                                   className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Color ${c}`}/>)}
                               <label className="relative h-7 w-7 cursor-pointer rounded-full border shadow-sm" title="Color personalizado" style={{background:"conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"}}>
                                 <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{formatText("foreColor",e.target.value);setTextMenu(null);}}/>
@@ -491,28 +538,30 @@ export function Cuaderno() {
                               <Highlighter className="h-4 w-4"/>
                             </button>
                             {textMenu==="highlight" && <div className="absolute bottom-10 left-0 z-[70] flex w-48 flex-wrap items-center gap-2 rounded-2xl border bg-card p-2 shadow-xl">
-                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor","transparent");setTextMenu(null);}}
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor","transparent");setTextMenu(null);setToolOptions(null);}}
                                 className="grid h-7 w-7 place-items-center rounded-full border bg-white text-[11px]" title="Sin resaltado">⊘</button>
                               {["#FFF3A3","#FFD9A0","#FFB3C1","#C9F2C7","#B8E3FF","#E3D1FF"].map(c=>
-                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor",c);setTextMenu(null);}}
+                                <button key={c} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("hiliteColor",c);setTextMenu(null);setToolOptions(null);}}
                                   className="h-7 w-7 rounded-full border shadow-sm" style={{backgroundColor:c}} aria-label={`Resaltado ${c}`}/>)}
                               <label className="relative h-7 w-7 cursor-pointer rounded-full border shadow-sm" title="Resaltado personalizado" style={{background:"conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"}}>
                                 <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{formatText("hiliteColor",e.target.value);setTextMenu(null);}}/>
                               </label>
                             </div>}
                           </div>
+                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{editorRef.current?.focus();document.execCommand("undo");saveText();}} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Deshacer"><Undo2 className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{editorRef.current?.focus();document.execCommand("redo");saveText();}} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Rehacer"><Redo2 className="h-4 w-4"/></button>
                           <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>imageInputRef.current?.click()} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Insertar imagen"><ImagePlus className="h-4 w-4"/></button>
                           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={insertImage}/>
                           <div className="relative">
                             <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="more"?null:"more")} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Más formato"><MoreHorizontal className="h-4 w-4"/></button>
                             {textMenu==="more" && <div className="absolute bottom-10 right-0 z-[70] w-52 rounded-2xl border bg-card p-2 shadow-xl">
                               <div className="grid grid-cols-3 gap-1">
-                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("text-shadow:1px 1px 2px rgba(80,65,58,.28)");setTextMenu(null);}} className="rounded-full border px-2 py-1 text-[10px]">Sombra</button>
-                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("border:1px solid #D9C6BC;border-radius:6px;padding:1px 3px");setTextMenu(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
+                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("text-shadow:1px 1px 2px rgba(80,65,58,.28)");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Sombra</button>
+                                <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("border:1px solid #D9C6BC;border-radius:6px;padding:1px 3px");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
                                 <label className="relative cursor-pointer rounded-full border px-2 py-1 text-center text-[10px]">Borde 🎨<input type="color" className="absolute inset-0 h-full w-full opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{wrapSelection(`border:1px solid ${e.target.value};border-radius:6px;padding:1px 3px`);setTextMenu(null);}}/></label>
                               </div>
-                              <div className="mt-2 flex flex-wrap gap-1 border-t pt-2">
-                                {["🌱","🌸","⭐","❤️","✓","📌","💡","😊"].map(x=><button key={x} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(x)} className="grid h-8 w-8 place-items-center rounded-full border bg-background text-lg">{x}</button>)}
+                              <div className="mt-2 grid max-h-48 grid-cols-6 gap-1 overflow-y-auto border-t pt-2">
+                                {STICKERS.map(x=><button key={x} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(x)} className="grid h-8 w-8 place-items-center rounded-full border bg-background text-lg">{x}</button>)}
                               </div>
                             </div>}
                           </div>
@@ -560,7 +609,13 @@ export function Cuaderno() {
                 ref={editorRef}
                 contentEditable={tool === "texto"}
                 suppressContentEditableWarning
-                onInput={e => patch({ html: e.currentTarget.innerHTML })} onMouseUp={rememberSelection} onKeyUp={rememberSelection}
+                onInput={e => patch({ html: e.currentTarget.innerHTML })}
+                onMouseUp={rememberSelection}
+                onKeyUp={rememberSelection}
+                onPointerDown={onEditorPointerDown}
+                onPointerMove={onEditorPointerMove}
+                onPointerUp={onEditorPointerUp}
+                onPointerCancel={onEditorPointerUp}
                 className="relative z-10 min-h-[calc(100vh-112px)] p-6 text-lg leading-8 outline-none"
                 data-placeholder="Tocá y escribí..."
               />
@@ -579,4 +634,4 @@ export function Cuaderno() {
       )}
     </section>
   );
-  }
+}

@@ -124,7 +124,7 @@ export function Cuaderno() {
     };
     persist([sheet, ...sheets]);
     setOpenId(sheet.id);
-    setTool("texto");
+    setTool("texto"); setToolOptions(null);
   };
 
   const patch = (changes: Partial<Sheet>) => {
@@ -315,8 +315,8 @@ export function Cuaderno() {
     saveText();
   };
 
-  const imageHandle=(c:"nw"|"ne"|"sw"|"se")=>`<span data-img-handle="${c}" style="position:absolute;width:14px;height:14px;border:2px solid #fff;background:#63a7d8;border-radius:50%;z-index:6;${c.includes("n")?"top:-8px;":"bottom:-8px;"}${c.includes("w")?"left:-8px;":"right:-8px;"}"></span>`;
-  const freeImageHtml=(src:string)=>`<span class="cuaderno-free-image" contenteditable="false" data-selected="true" style="position:absolute;left:24px;top:70px;width:240px;max-width:calc(100% - 48px);display:block;z-index:4;touch-action:none;user-select:none;"><img src="${src}" alt="" draggable="false" style="display:block;width:100%;height:auto;border-radius:12px;pointer-events:none;"/><button type="button" data-img-delete="true" style="position:absolute;top:-14px;right:-14px;width:28px;height:28px;border-radius:999px;border:1px solid #ead7d1;background:#fff;color:#d66f62;display:flex;align-items:center;justify-content:center;z-index:8;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer">×</button>${imageHandle("nw")}${imageHandle("ne")}${imageHandle("sw")}${imageHandle("se")}</span>`;
+  const imageHandle=()=>`<span data-img-handle="se" style="position:absolute;width:18px;height:18px;border:2px solid #fff;background:#e8a58d;border-radius:50%;z-index:6;right:-9px;bottom:-9px;box-shadow:0 1px 4px rgba(0,0,0,.18)"></span>`;
+  const freeImageHtml=(src:string)=>`<span class="cuaderno-free-image" contenteditable="false" data-selected="true" style="position:absolute;left:24px;top:70px;width:240px;max-width:calc(100% - 48px);display:block;z-index:4;touch-action:none;user-select:none;border:1.5px solid #e8a58d;border-radius:13px;"><img src="${src}" alt="" draggable="false" style="display:block;width:100%;height:auto;border-radius:12px;pointer-events:none;"/><button type="button" data-img-delete="true" style="position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:999px;border:1px solid #ead7d1;background:#fff;color:#d66f62;display:flex;align-items:center;justify-content:center;z-index:8;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer">×</button>${imageHandle()}</span>`;
 
   const deselectImages=(except?:HTMLElement)=>{
     editorRef.current?.querySelectorAll<HTMLElement>(".cuaderno-free-image").forEach(w=>{
@@ -489,7 +489,7 @@ export function Cuaderno() {
                               <span className="truncate" style={{fontFamily:textFont}}>{textFont}</span><span>⌄</span>
                             </button>
                             {textMenu==="font" && <div className="absolute right-0 top-9 z-[70] max-h-52 w-44 overflow-y-auto rounded-2xl border bg-card p-1.5 shadow-xl">
-                              {["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Lora","Century Gothic","Lucida Sans","Lucida Console","Book Antiqua","Impact","Consolas","Franklin Gothic Medium","Rockwell","Baskerville","Cambria","Candara"].map(font => <button key={font} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextFont(font);formatText("fontName",font);setTextMenu(null);}} style={{fontFamily:font}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{font}</button>)}
+                              {["Arial","Verdana","Tahoma","Trebuchet MS","Georgia","Times New Roman","Courier New","Comic Sans MS","Segoe UI","Calibri","Garamond","Helvetica","Palatino","Lora","Century Gothic","Lucida Sans","Lucida Console","Book Antiqua","Impact","Consolas","Franklin Gothic Medium","Rockwell","Baskerville","Cambria","Candara"].map(font => <button key={font} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextFont(font);formatText("fontName",font);setTextMenu(null);setToolOptions(null);}} style={{fontFamily:font}} className="block w-full rounded-xl px-3 py-2 text-left text-xs hover:bg-[#f7ece7]">{font}</button>)}
                             </div>}
                           </div>
                           <div className="relative">
@@ -502,18 +502,18 @@ export function Cuaderno() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("bold")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("italic")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
-                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>formatText("underline")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("bold");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Negrita"><Bold className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("italic");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Cursiva"><Italic className="h-4 w-4"/></button>
+                          <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{formatText("underline");setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Subrayado"><Underline className="h-4 w-4"/></button>
                           <div className="relative">
                             <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="align"?null:"align")} className="grid h-8 w-8 place-items-center rounded-full border bg-card" title="Alineación">
                               {textAlign==="left"?<AlignLeft className="h-4 w-4"/>:textAlign==="center"?<AlignCenter className="h-4 w-4"/>:textAlign==="right"?<AlignRight className="h-4 w-4"/>:<span className="text-xs">☰</span>}
                             </button>
                             {textMenu==="align" && <div className="absolute right-0 top-9 z-[70] flex gap-1 rounded-2xl border bg-card p-1.5 shadow-xl">
-                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("left");formatText("justifyLeft");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignLeft className="h-4 w-4"/></button>
-                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("center");formatText("justifyCenter");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignCenter className="h-4 w-4"/></button>
-                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("right");formatText("justifyRight");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignRight className="h-4 w-4"/></button>
-                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("justify");formatText("justifyFull");setTextMenu(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]" title="Justificado"><span className="text-xs">☰</span></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("left");formatText("justifyLeft");setTextMenu(null);setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignLeft className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("center");formatText("justifyCenter");setTextMenu(null);setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignCenter className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("right");formatText("justifyRight");setTextMenu(null);setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]"><AlignRight className="h-4 w-4"/></button>
+                              <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{setTextAlign("justify");formatText("justifyFull");setTextMenu(null);setToolOptions(null);}} className="grid h-8 w-8 place-items-center rounded-full hover:bg-[#f7ece7]" title="Justificado"><span className="text-xs">☰</span></button>
                             </div>}
                           </div>
                         </div>
@@ -554,13 +554,13 @@ export function Cuaderno() {
                           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={insertImage}/>
                           <div className="relative">
                             <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>setTextMenu(textMenu==="more"?null:"more")} className="grid h-8 w-8 place-items-center rounded-full border bg-card shadow-sm" title="Más formato"><MoreHorizontal className="h-4 w-4"/></button>
-                            {textMenu==="more" && <div className="absolute bottom-10 right-0 z-[70] w-52 rounded-2xl border bg-card p-2 shadow-xl">
+                            {textMenu==="more" && <div className="absolute right-full top-0 z-[70] mr-2 w-60 max-w-[calc(100vw-7rem)] rounded-2xl border bg-card p-2 shadow-xl">
                               <div className="grid grid-cols-3 gap-1">
                                 <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("text-shadow:1px 1px 2px rgba(80,65,58,.28)");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Sombra</button>
                                 <button type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>{wrapSelection("border:1px solid #D9C6BC;border-radius:6px;padding:1px 3px");setTextMenu(null);setToolOptions(null);}} className="rounded-full border px-2 py-1 text-[10px]">Borde</button>
                                 <label className="relative cursor-pointer rounded-full border px-2 py-1 text-center text-[10px]">Borde 🎨<input type="color" className="absolute inset-0 h-full w-full opacity-0" onMouseDown={()=>rememberSelection()} onChange={e=>{wrapSelection(`border:1px solid ${e.target.value};border-radius:6px;padding:1px 3px`);setTextMenu(null);}}/></label>
                               </div>
-                              <div className="mt-2 grid max-h-48 grid-cols-6 gap-1 overflow-y-auto border-t pt-2">
+                              <div className="mt-2 grid max-h-52 grid-cols-6 gap-1 overflow-y-auto overflow-x-hidden border-t pt-2">
                                 {STICKERS.map(x=><button key={x} type="button" onMouseDown={e=>{e.preventDefault();rememberSelection();}} onClick={()=>insertSticker(x)} className="grid h-8 w-8 place-items-center rounded-full border bg-background text-lg">{x}</button>)}
                               </div>
                             </div>}
